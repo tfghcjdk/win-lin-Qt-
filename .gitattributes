@@ -1,0 +1,17 @@
+* text=auto
+*.md text eol=lf
+*.txt text eol=lf
+*.pro text eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.qss text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.pdf binary
