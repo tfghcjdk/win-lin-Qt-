@@ -39,8 +39,6 @@ class CameraOverlay : public QWidget {
 public:
     explicit CameraOverlay(QWidget *parent):QWidget(parent),camera(this),status(QStringLiteral("摄像头准备中")) {
         setObjectName("cameraOverlay");setGeometry(0,0,1024,600);
-        const QByteArray configured=qgetenv("HMI_CAMERA_DEVICE");
-        if(!configured.isEmpty())camera.device=QString::fromLocal8Bit(configured);
         QPushButton *close=new QPushButton(QStringLiteral("返回  ·  Esc"),this);close->setObjectName("closeCamera");close->setGeometry(869,18,135,36);connect(close,&QPushButton::clicked,this,[this](){hide();});
         connect(&camera,&CameraV4l2::frameReady,this,[this](const QImage &image){frame=image.mirrored(true,false);camera.acknowledge();update();});
         connect(&camera,&CameraV4l2::message,this,[this](const QString &text){status=text;update();});
@@ -52,15 +50,14 @@ protected:
     void paintEvent(QPaintEvent *) {
         QPainter p(this);p.setRenderHint(QPainter::Antialiasing);p.setRenderHint(QPainter::SmoothPixmapTransform);p.fillRect(rect(),QColor("#061322"));
         Hmi::icon(p,"camera",QRectF(24,22,24,24));Hmi::text(p,QRectF(60,16,700,35),QStringLiteral("倒车影像"),21);
-        const QRectF target(88,72,848,454);p.setPen(QPen(QColor("#24465e"),1));p.setBrush(QColor("#02070c"));p.drawRoundedRect(target,8,8);
+        const QRectF target(80,62,864,486);p.setPen(QPen(QColor("#24465e"),1));p.setBrush(QColor("#02070c"));p.drawRoundedRect(target,8,8);
         if(!frame.isNull()) {
-            QRectF source(frame.rect());const qreal targetRatio=target.width()/target.height(),sourceRatio=source.width()/source.height();
-            if(sourceRatio>targetRatio){const qreal width=source.height()*targetRatio;source.setLeft((source.width()-width)/2);source.setWidth(width);}
-            else{const qreal height=source.width()/targetRatio;source.setTop((source.height()-height)/2);source.setHeight(height);}
-            QPainterPath clip;clip.addRoundedRect(target,8,8);p.save();p.setClipPath(clip);p.drawImage(target,frame,source);p.restore();
+            const QImage display=frame.scaled(target.size().toSize(),Qt::KeepAspectRatio,Qt::SmoothTransformation);
+            QRectF displayTarget(QPointF(0,0),display.size());displayTarget.moveCenter(target.center());
+            QPainterPath clip;clip.addRoundedRect(target,8,8);p.save();p.setClipPath(clip);p.drawImage(displayTarget,display);p.restore();
         } else Hmi::text(p,target,QStringLiteral("正在等待摄像头画面"),19,Muted,false,Qt::AlignCenter);
         drawGuides(p,target);
-        Hmi::text(p,QRectF(25,548,974,25),status+QStringLiteral("  ·  返回后自动关闭摄像头  ·  辅助线未经车辆标定"),13,frame.isNull()?Amber:Muted,false,Qt::AlignCenter);
+        Hmi::text(p,QRectF(25,558,974,25),status+QStringLiteral("  ·  返回后自动关闭摄像头  ·  辅助线未经车辆标定"),13,frame.isNull()?Amber:Muted,false,Qt::AlignCenter);
     }
 private:
     void startCamera(){if(camera.isRunning())return;frame=QImage();status=QStringLiteral("正在连接 %1").arg(camera.device);camera.start();update();}
@@ -158,7 +155,7 @@ QWidget *MainWindow::mediaPage() {
 }
 QWidget *MainWindow::settingsPage() {
     QWidget *page=new PageShell(QStringLiteral("设置"),QStringLiteral("系统信息与测试场景"));page->setObjectName("settingsPage");
-    info(page,QRect(0,72,447,218),QStringLiteral("NEV-SmartHMI"),QStringLiteral("界面版本 &nbsp; 0.2.4-ui<br/><br/>设计分辨率 &nbsp; 1024 × 600<br/><br/>兼容目标 &nbsp; Qt 5.4.1 / C++11<br/><br/>当前运行 Qt &nbsp; %1").arg(QString::fromLatin1(qVersion())));
+    info(page,QRect(0,72,447,218),QStringLiteral("NEV-SmartHMI"),QStringLiteral("界面版本 &nbsp; 0.2.5-ui<br/><br/>设计分辨率 &nbsp; 1024 × 600<br/><br/>兼容目标 &nbsp; Qt 5.4.1 / C++11<br/><br/>当前运行 Qt &nbsp; %1").arg(QString::fromLatin1(qVersion())));
     info(page,QRect(461,72,451,218),QStringLiteral("连接说明"),QStringLiteral("车辆、胎压和能量数据为模拟来源。<br/><br/>Linux 已接入 V4L2 倒车摄像头；CAN / 串口、GPS、网络状态和音频后端尚未接入。<br/><br/>北京时间按本机 UTC+8 计算，不执行 NTP / RTC 写入。"));
     info(page,QRect(0,303,912,116),QStringLiteral("检查不同的数据状态"),QStringLiteral("切换模拟数据或低胎压场景后，可返回首页 / 车辆状态页查看反馈。<br/><br/>低胎压场景只用于验证警报视觉，不定义真实车辆的报警阈值。"));
     QPushButton *connection=action(page,"toggleData",QString(),QRect(17,437,266,46));

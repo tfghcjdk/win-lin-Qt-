@@ -89,8 +89,8 @@ void CameraV4l2::run() {
         for (int i=0;i<2;++i) {
             if (i==0 && !jpeg) continue;
             format.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            format.fmt.pix.width=640;
-            format.fmt.pix.height=480;
+            format.fmt.pix.width=qBound(320,requestedSize.width(),1920);
+            format.fmt.pix.height=qBound(240,requestedSize.height(),1080);
             format.fmt.pix.pixelformat=formats[i];
             format.fmt.pix.field=V4L2_FIELD_ANY;
             if (control(fd,VIDIOC_S_FMT,&format)<0) continue;
@@ -108,7 +108,7 @@ void CameraV4l2::run() {
         v4l2_streamparm rate={};
         rate.type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
         rate.parm.capture.timeperframe.numerator=1;
-        rate.parm.capture.timeperframe.denominator=15;
+        rate.parm.capture.timeperframe.denominator=qBound(1,requestedFps,60);
         control(fd,VIDIOC_S_PARM,&rate);
 
         v4l2_requestbuffers request={};

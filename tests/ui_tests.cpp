@@ -8,6 +8,7 @@
 #include <QTime>
 #include "ui/main_window.h"
 #include "ui/hmi_cards.h"
+#include "hardware/camera_v4l2.h"
 
 class UiTests : public QObject {
     Q_OBJECT
@@ -35,6 +36,12 @@ private slots:
     void beijingClockUsesUtcPlusEight() {
         const QDateTime utc(QDate(2026,1,1),QTime(16,5),Qt::UTC);
         QCOMPARE(MainWindow::beijingClockText(utc),QStringLiteral("2026年1月2日   星期五   00:05"));
+    }
+    void cameraDefaultsToClearVideo9Capture() {
+        CameraV4l2 camera;
+        QCOMPARE(camera.device,QStringLiteral("/dev/video9"));
+        QCOMPARE(camera.requestedSize,QSize(1280,720));
+        QCOMPARE(camera.requestedFps,30);
     }
     void climateBoundariesAndSharedState() {
         QWidget *home=w->findChild<QWidget *>("homeClimate");QVERIFY(home);
