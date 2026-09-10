@@ -89,3 +89,7 @@ Qt1604/
 ## 关联 GitHub 后保留的原有文件
 
 上述树描述本次创建的 NEV-SmartHMI 框架。后续关联远端 `main` 时，已同时取回并保留远端原有的 `Qt1604.pro`、`Qt1604.pro.user`、根目录 `main.cpp` / `mainwindow.*`、`resources.qrc`、`images/` 和 `.build-ui/`。它们来自已有提交 `ec828ec`，不属于本次新写的功能代码，也未纳入 NEV-SmartHMI 辅助工程的编译目标。
+
+## 0.2.0-ui 实现增量
+
+原框架树作为初始化记录保留。当前 `NEV-SmartHMI.pro` / `CMakeLists.txt` 已可构建应用，`src/main.cpp`、`src/core/vehicle_data_center.*`、`src/ui/main_window.*` 和 QSS 已实现；新增 `hmi_sources.pri`、`src/ui/hmi_cards.*`、`src/ui/paint_helpers.*`、`assets/hmi.qrc`、`assets/images/prototype.jpg`、`tests/ui_tests.cpp/.pro` 与 `doc/UI_IMPLEMENTATION.md`。不再适用初始“所有源文件仅注释”说明。

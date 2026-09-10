@@ -1,5 +1,3 @@
-# 业务核心
+# 业务与演示状态
 
-vehicle_data_center 预留车速、电量、胎压等统一数据与状态；system_manager 预留系统时间、网络及设置管理。媒体与导航业务服务按 TECH_SPEC 后续接入。
-
-当前状态：仅建立框架，尚未实现相关功能。
+`vehicle_data_center.h/.cpp` 已实现 UI 演示状态、边界、进度和通知；`system_manager.*` 仍为占位。当前数据中心不发送硬件指令、不播放音频、不写入车辆或系统设置。

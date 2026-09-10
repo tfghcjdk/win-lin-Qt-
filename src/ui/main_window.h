@@ -1,3 +1,33 @@
-// NEV-SmartHMI — 框架占位文件
-// 主窗口：后续容纳顶部状态、侧导航与 1024 × 600 内容布局。
-// TODO: 在功能开发阶段实现；当前无可编译的应用逻辑。
+#ifndef HMI_MAIN_WINDOW_H
+#define HMI_MAIN_WINDOW_H
+#include <QWidget>
+#include <QStackedWidget>
+#include <QPushButton>
+#include <QLabel>
+#include "core/vehicle_data_center.h"
+class MainWindow : public QWidget {
+    Q_OBJECT
+public:
+    explicit MainWindow(QWidget *parent = 0);
+    VehicleDataCenter *model() const { return state; }
+    int currentPage() const { return stack->currentIndex(); }
+    void setPage(int index);
+    bool cameraIsOpen() const;
+public slots:
+    void showCamera();
+protected:
+    void paintEvent(QPaintEvent *event);
+    void keyPressEvent(QKeyEvent *event);
+private:
+    VehicleDataCenter *state;
+    QStackedWidget *stack;
+    QWidget *cameraOverlay;
+    QVector<QPushButton *> navButtons;
+    QWidget *homePage();
+    QWidget *vehiclePage();
+    QWidget *navigationPage();
+    QWidget *climatePage();
+    QWidget *mediaPage();
+    QWidget *settingsPage();
+};
+#endif

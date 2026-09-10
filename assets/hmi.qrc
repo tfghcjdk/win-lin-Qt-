@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/hmi">
+    <file alias="prototype.jpg">images/prototype.jpg</file>
+    <file alias="theme.qss">qss/dark_theme.qss</file>
+  </qresource>
+</RCC>

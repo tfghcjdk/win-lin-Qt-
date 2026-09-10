@@ -1,3 +1,11 @@
-/* NEV-SmartHMI 暗色主题占位。
- * TODO: 后续实现样式；当前不包含任何 QSS 规则。
- */
+QWidget { color: #dfedfb; font-family: "Microsoft YaHei"; }
+QPushButton { background: #102b45; border: 1px solid #264861; border-radius: 8px; padding: 2px; color: #c9dff1; }
+QPushButton:hover { background: #163c59; border-color: #2694c2; }
+QPushButton:pressed, QPushButton:checked { background: #075586; border-color: #1dbdf5; color: #e4faff; }
+QPushButton:disabled { color: #496179; background: #0c2033; border-color: #173045; }
+QPushButton[quiet="true"] { background: transparent; border: none; }
+QPushButton[quiet="true"]:hover { background: #173954; }
+QSlider::groove:horizontal { height: 5px; background: #19324b; border-radius: 2px; }
+QSlider::sub-page:horizontal { background: #18b9eb; border-radius: 2px; }
+QSlider::handle:horizontal { background: #e0faff; border: 2px solid #12bce9; width: 10px; margin: -5px 0; border-radius: 6px; }
+QToolTip { background: #12304a; color: #e6f2ff; border: 1px solid #267392; padding: 6px; }

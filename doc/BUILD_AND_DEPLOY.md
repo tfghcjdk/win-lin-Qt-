@@ -1,58 +1,56 @@
-# 构建与部署说明
+# 构建、运行与部署
 
-## 当前工程入口
+## 当前状态
 
-项目处于框架阶段，C++ 文件仅有注释，没有 `main()` 或窗口实现，不能启动 HMI 程序。
+`NEV-SmartHMI.pro` 现为可执行应用工程，CMake 同样已切换为 C++11 / Qt Widgets 应用目标。当前 UI 和模拟交互已实现，真实硬件集成尚未实现。旧 `Qt1604.pro` 独立保留。
 
-| 入口 | 当前行为 |
-| --- | --- |
-| `CMakeLists.txt` | `LANGUAGES NONE`；提供 `NEV-SmartHMI-Skeleton` 源文件浏览目标，不检测 Qt 或编译器 |
-| `NEV-SmartHMI.pro` | `TEMPLATE = aux`；供 Qt Creator 浏览文件，不生成应用 |
-| `scripts/build_arm.sh` | 注释占位，无构建行为 |
-| `scripts/deploy_to_board.sh` | 注释占位，无设备传输或启动行为 |
+## Windows / Qt Creator
 
-在 Qt Creator 中选择“打开文件或项目”，打开根目录 `NEV-SmartHMI.pro`。框架阶段没有可执行文件，因此不应配置启动程序或将“运行”失败作为产品缺陷。
+1. 打开 `D:\QTXM\Qt164\Qt1604\NEV-SmartHMI.pro`。
+2. 选择实际安装的 **Qt 5.14.2 MinGW 32-bit** Kit。
+3. 原来已打开辅助工程时，先执行“构建 → 执行 qmake”，再构建和运行；必要时重新打开项目。
+4. 应用为 1024 × 600 无边框窗口。Esc 返回 / 退出，设置页也提供退出按钮。
 
-## 可选：检查 CMake 框架入口
+需求基线中的 MSVC 2017 32-bit 并未在本次验证；项目为 MSVC 配置了 `/utf-8`，后续使用该 Kit 时还需实际编译验证。
 
-本项目框架入口声明 CMake 3.5 及以上。若本机 CMake、Ninja 已在 PATH 中，可在 PowerShell 执行：
+## 本机命令行构建
+
+以下为 PowerShell 命令，Qt 和编译器路径仅用于本机示例：
 
 ```powershell
 Set-Location -LiteralPath 'D:\QTXM\Qt164\Qt1604'
-cmake -S . -B build/skeleton -G Ninja
-cmake --build build/skeleton --target NEV-SmartHMI-Skeleton
+$env:PATH = 'D:\QT\Tools\mingw730_32\bin;D:\QT\5.14.2\mingw73_32\bin;' + $env:PATH
+New-Item -ItemType Directory -Path build/ui -Force | Out-Null
+qmake -o build/ui/Makefile NEV-SmartHMI.pro CONFIG+=release
+mingw32-make -C build/ui -j4
 ```
 
-上面的 `-S / -B` 调用形式需 CMake 3.13 及以上；使用更早版本时在单独构建目录调用 `cmake <源目录>`。没有 Ninja 时选择本机已安装的生成器。目标完成仅说明框架入口有效，不验证 Qt、MSVC、ARM 编译或产品功能。
+输出为 `build/ui/release/NEV-SmartHMI.exe`。在 Qt Creator 中运行会使用 Kit 提供的运行环境；直接双击程序前需部署运行库：
 
-## 开始功能开发后接入应用目标
+```powershell
+windeployqt --release --no-translations build/ui/release/NEV-SmartHMI.exe
+```
 
-1. 明确 ARM 工具链和 sysroot，确认其 ABI 与板端 Qt 库一致；不能仅凭 Cortex-A53 推断使用 aarch64。
-2. 将 CMake 项目语言设为 CXX，明确要求 C++11，并添加真实源文件和 Qt 5.4.1 兼容的 Qt 模块。
-3. 将 qmake 的 `TEMPLATE` 从 `aux` 调整为 `app`，接入 C++11、真实 `SOURCES` / `HEADERS`、资源文件和所需 Qt 模块。
-4. 实现最小程序入口与窗口后，再生成可执行程序。按平台选择模拟实现或 Linux 硬件实现，避免 Windows 编译直接包含 Linux 设备头文件。
-5. 在 Windows Qt 5.14.2 / MSVC 2017 32-bit 和 ARM Qt 5.4.1 两端验证构建与启动。
+程序资源已经由 `assets/hmi.qrc` 嵌入，不需要桌面原型图片的原始路径。
 
-上述操作属于后续实施计划，本次没有加入功能代码或虚构可运行目标。
+## 自动化交互测试与截图
 
-## ARM 构建和部署参数清单
+```powershell
+New-Item -ItemType Directory -Path build/ui-tests -Force | Out-Null
+qmake -o build/ui-tests/Makefile tests/ui_tests.pro CONFIG+=release
+mingw32-make -C build/ui-tests -j4
+$env:HMI_SCREENSHOT_DIR = 'D:\QTXM\Qt164\Qt1604\build\ui-validation'
+.\build\ui-tests\release\hmi-ui-tests.exe
+```
 
-| 参数 | 当前状态 |
-| --- | --- |
-| 交叉编译器可执行路径、版本和目标 ABI | 待提供 |
-| Qt 5.4.1 的 ARM 安装路径 / qmake / mkspec | 待提供 |
-| 板端 sysroot、libc 与依赖库 | 待提供 |
-| 屏幕和触控平台插件、字体目录 | 待板端核实 |
-| CAN / UART / V4L2 设备节点、驱动和权限 | 待板端核实 |
-| 音频后端和 Qt Multimedia 可用性 | 待板端核实 |
-| 板端地址、登录账户、部署路径和启动命令 | 待提供 |
+测试验证真实按钮点击、温度边界、风量独立性、跨页状态、媒体进度、路线切换、相机返回、断连与低压演示，并保存各页截图。无显示设备时可设置 `QT_QPA_PLATFORM=offscreen`；Windows 离屏测试需要 `QT_QPA_FONTDIR=C:\Windows\Fonts`。普通桌面运行不要设置离屏变量。
 
-这些参数齐备后再实现 `build_arm.sh` 和 `deploy_to_board.sh`。部署时应记录二进制和依赖版本、校验结果、启动日志及回退办法；本阶段没有执行网络部署。
+## CMake 入口
 
-## 本阶段验证记录（2026-09-08）
+需要 CMake 3.5+、Qt 5.4.1+ Core / Gui / Widgets 和匹配的 C++ 编译器。`CMakeLists.txt` 已启用 AUTOMOC / AUTORCC、C++11 和资源嵌入；使用与 Qt 安装匹配的生成器及 `CMAKE_PREFIX_PATH`。本机未找到 CMake，未实际执行此入口，不能把 qmake 验证等同于 CMake 验证。
 
-- 使用本机 Qt 5.14.2 MinGW 32-bit 的 qmake 成功生成辅助工程 Makefile，并使用对应 `mingw32-make` 完成框架目标检查。输出符合 `TEMPLATE = aux` 的预期：没有需要编译的应用目标。
-- 检查确认所有 CMake 显式引用的文件存在，目录 README 已被 qmake 工程收录，项目 Markdown 相对链接均能解析到现有文件。
-- 检查确认 C++、预留 Python 与 shell 文件仅包含注释，未写入产品功能实现。
-- 本机已检查的位置和 PATH 未发现 CMake，未实际运行 CMake 配置；本次只核对其文件引用和框架配置。
-- 本次使用 MinGW 仅验证辅助工程入口，没有验证需求中的 MSVC 2017 32-bit、Qt 5.4.1 ARM 编译或真实开发板运行。
+## ARM 尚需验证
+
+目标仍为 X6818、Linux 3.4.39、Qt 5.4.1。必须确认 SDK、armv7l ABI、浮点约定、sysroot、Qt 安装、显示/触控插件、中文字体、设备权限和部署路径。代码没有引入 Qt 5.6+ API，但尚未进行真实 Qt 5.4.1 ARM 交叉编译与板端运行。
+
+`build_arm.sh`、`deploy_to_board.sh`、硬件驱动文件和 CAN 仿真脚本仍为占位，不能用它们完成板端构建或部署。
