@@ -1,14 +1,12 @@
 # NEV-SmartHMI 新能源汽车智能座舱
 
-当前版本：**0.2.0-ui**。已实现 1024 × 600 Qt Widgets 页面与交互演示，可编译运行。
+当前版本：**0.2.1-ui**。已实现 1024 × 600 Qt Widgets 页面与交互演示，可编译运行。
 
 ## 打开与运行
 
 在 Qt Creator 中打开根目录 **`NEV-SmartHMI.pro`**，选择本机 **Desktop Qt 5.14.2 MinGW 32-bit**，执行 qmake 后构建、运行。该工程已由 `TEMPLATE = aux` 改为 `app`。若 Qt Creator 仍显示旧的辅助工程状态，请重新运行 qmake 或关闭并重新打开本工程。
 
 本机本次构建的程序位于 `build/ui/release/NEV-SmartHMI.exe`。完成运行库部署后可直接双击。按 **Esc** 关闭倒车预览、从详情返回首页；在首页按 Esc 退出，也可在设置页点击“退出应用”。
-
-根目录的 `Qt1604.pro` 是此前从 GitHub 保留的旧工程。此次新界面使用 `NEV-SmartHMI.pro` 和 `src/` 下的代码，不修改旧工程的 `mainwindow.*`。
 
 ## 已实现的页面
 
@@ -47,4 +45,4 @@
 
 远端为 [tfghcjdk/win-lin-Qt-](https://github.com/tfghcjdk/win-lin-Qt-) 的 `main`，本地已关联 `origin/main`。根目录 `git_commit_push.bat` 可提交并推送后续修改，私钥保留在仓库之外。
 
-本机 `build/` 和新增的 Qt Creator 用户配置由 `.gitignore` 排除；旧远端已经跟踪的 `.build-ui/` 等文件仍作为历史工程保留。
+本机 `build/`、`.build-ui/` 和 Qt Creator 用户配置由 `.gitignore` 排除。仓库中早期遗留的 `Qt1604.pro`、根目录 `mainwindow.*`、旧资源文件和 `.build-ui/` 已在 0.2.1 清理；当前唯一应用入口为 `NEV-SmartHMI.pro`。

@@ -1,9 +1,0 @@
-QT += widgets
-CONFIG += c++11 console
-CONFIG -= app_bundle
-TARGET = verify_ui
-SOURCES += verify.cpp ../../mainwindow.cpp
-HEADERS += ../../mainwindow.h
-FORMS += ../../mainwindow.ui
-RESOURCES += ../../resources.qrc
-INCLUDEPATH += ../..

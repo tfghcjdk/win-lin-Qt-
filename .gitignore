@@ -1,5 +1,6 @@
 # Qt / CMake / qmake local build products
 /build/
+/.build-ui/
 /build-*/
 /cmake-build-*/
 /out/

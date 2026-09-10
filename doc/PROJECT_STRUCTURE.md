@@ -7,8 +7,9 @@ Qt1604/
 ├── .md                               原始需求资料，保留原文
 ├── .gitignore                        构建产物、本机配置和常见凭据忽略规则
 ├── .gitattributes                    文本换行规则，bat 使用 CRLF
-├── CMakeLists.txt                    框架浏览目标，当前无应用编译目标
-├── NEV-SmartHMI.pro                  Qt Creator 辅助工程入口
+├── CMakeLists.txt                    Qt Widgets / C++11 应用构建入口
+├── NEV-SmartHMI.pro                  当前唯一 Qt Creator 应用入口
+├── hmi_sources.pri                   qmake 共用源码清单
 ├── README.md                        项目导航与状态
 ├── PRD.md                           十个功能模块的需求与验收
 ├── TECH_SPEC.md                     技术架构与接口约束
@@ -29,11 +30,11 @@ Qt1604/
 │   └── deploy_to_board.sh           板端部署占位
 ├── src/
 │   ├── README.md
-│   ├── main.cpp                     程序入口占位
+│   ├── main.cpp                     程序入口、字体和 QSS 加载
 │   ├── core/
 │   │   ├── README.md
-│   │   ├── vehicle_data_center.h
-│   │   ├── vehicle_data_center.cpp
+│   │   ├── vehicle_data_center.h    UI 演示状态接口
+│   │   ├── vehicle_data_center.cpp  UI 演示状态实现
 │   │   ├── system_manager.h
 │   │   └── system_manager.cpp
 │   ├── hardware/
@@ -47,7 +48,9 @@ Qt1604/
 │   ├── ui/
 │   │   ├── README.md
 │   │   ├── main_window.h
-│   │   ├── main_window.cpp
+│   │   ├── main_window.cpp          六页导航和倒车覆盖层
+│   │   ├── hmi_cards.h/.cpp         可复用功能卡片
+│   │   ├── paint_helpers.h/.cpp     图标、地图和素材绘制
 │   │   ├── header_bar/README.md      F01 顶部状态
 │   │   ├── side_nav/README.md        F02 左侧导航
 │   │   ├── dashboard/README.md       F03 仪表 / F04 续航胎压 / F05 能量
@@ -63,21 +66,25 @@ Qt1604/
 │       └── vehicle_types.h
 ├── assets/
 │   ├── README.md
+│   ├── hmi.qrc                     Qt 嵌入资源清单
 │   ├── images/README.md             图片与图标预留
+│   ├── images/prototype.jpg          用户提供的原型静态素材
 │   ├── fonts/README.md              中文字体预留
 │   └── qss/
 │       ├── README.md
-│       └── dark_theme.qss           样式占位
+│       └── dark_theme.qss           已实现暗色控件样式
 └── tests/
     ├── README.md
+    ├── ui_tests.cpp                 UI 交互和边界测试
+    ├── ui_tests.pro                 Qt Test 工程入口
     └── mock_can_publisher.py        CAN 数据仿真占位
 ```
 
 ## 占位约定
 
-- `.h`、`.cpp`、`.qss` 以及预留 `.py`、`.sh` 当前均只有注释和职责说明，没有功能实现。
+- UI、演示状态和 QSS 已实现；硬件驱动、系统管理、主题管理、预留 `.py` 和 `.sh` 仍为注释占位。
 - 原文的 `name.h/.cpp` 在实际目录中拆为独立的 `.h` 与 `.cpp` 文件。
-- 原文 UI 子目录未指定具体组件文件名，当前用 README 说明职责；开始对应模块开发时再建立文件。
+- 原文 UI 子目录保留模块职责 README；当前共享实现集中在 `main_window.*`、`hmi_cards.*` 和 `paint_helpers.*`。
 - 目录内 README 同时使预留目录可被 Git 跟踪，无需额外 `.gitkeep`。
 - 当前按用户明确指定的 Windows `.bat` 流程实现 Git 工具，Python 日志联动暂不实现。
 - 原始资料的 `doc/*.pdf` 与 `doc/*.html` 为未来可选导出产物，本次以 Markdown 项目启动说明替代，不创建空 PDF / HTML。
@@ -86,9 +93,9 @@ Qt1604/
 
 `src/ui` 负责展示与交互，`src/core` 管理业务数据和状态，`src/hardware` 负责设备适配与通信，`src/common` 存放共享类型和主题定义。后续 Windows 模拟和 ARM 真实硬件接入应遵循同一业务接口；具体约束见根目录 TECH_SPEC。
 
-## 关联 GitHub 后保留的原有文件
+## 旧工程清理
 
-上述树描述本次创建的 NEV-SmartHMI 框架。后续关联远端 `main` 时，已同时取回并保留远端原有的 `Qt1604.pro`、`Qt1604.pro.user`、根目录 `main.cpp` / `mainwindow.*`、`resources.qrc`、`images/` 和 `.build-ui/`。它们来自已有提交 `ec828ec`，不属于本次新写的功能代码，也未纳入 NEV-SmartHMI 辅助工程的编译目标。
+关联远端时取回的 `Qt1604.pro`、旧 Qt Creator 用户配置、根目录 `main.cpp` / `mainwindow.*`、`resources.qrc`、旧 `images/` 和 `.build-ui/` 均来自早期提交 `ec828ec`。这些文件不被当前应用引用，已在 0.2.1 清理。当前目录只保留 `NEV-SmartHMI` 工程、其文档以及可重新生成的本机 `build/` 验证产物。
 
 ## 0.2.0-ui 实现增量
 

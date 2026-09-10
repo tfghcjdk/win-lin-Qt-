@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-`NEV-SmartHMI.pro` 现为可执行应用工程，CMake 同样已切换为 C++11 / Qt Widgets 应用目标。当前 UI 和模拟交互已实现，真实硬件集成尚未实现。旧 `Qt1604.pro` 独立保留。
+`NEV-SmartHMI.pro` 是当前唯一 Qt 应用工程，CMake 同样提供 C++11 / Qt Widgets 应用目标。当前 UI 和模拟交互已实现，真实硬件集成尚未实现。早期遗留的 `Qt1604` 工程已经清理。
 
 ## Windows / Qt Creator
 
