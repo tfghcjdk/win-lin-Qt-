@@ -4,6 +4,8 @@
 #include <QDir>
 #include <QImage>
 #include <QSlider>
+#include <QDate>
+#include <QTime>
 #include "ui/main_window.h"
 #include "ui/hmi_cards.h"
 
@@ -30,20 +32,26 @@ private slots:
             for(int j=0;j<children.size();++j)QVERIFY2(cards[i]->rect().contains(children[j]->geometry()),qPrintable(children[j]->objectName()));
         }
     }
+    void beijingClockUsesUtcPlusEight() {
+        const QDateTime utc(QDate(2026,1,1),QTime(16,5),Qt::UTC);
+        QCOMPARE(MainWindow::beijingClockText(utc),QStringLiteral("2026年1月2日   星期五   00:05"));
+    }
     void climateBoundariesAndSharedState() {
         QWidget *home=w->findChild<QWidget *>("homeClimate");QVERIFY(home);
         QPushButton *plus=button(home,"temperatureUp"),*minus=button(home,"temperatureDown");QVERIFY(plus&&minus);
         QTest::mouseClick(plus,Qt::LeftButton);QCOMPARE(w->model()->temperature,24.5);
         for(int i=0;i<40;++i)QTest::mouseClick(plus,Qt::LeftButton);QCOMPARE(w->model()->temperature,30.0);QVERIFY(!plus->isEnabled());
         for(int i=0;i<40;++i)QTest::mouseClick(minus,Qt::LeftButton);QCOMPARE(w->model()->temperature,16.0);QVERIFY(!minus->isEnabled());
-        w->model()->setTemperature(24.0);QSlider *fan=home->findChild<QSlider *>("fanSpeed");QVERIFY(fan);fan->setValue(7);QCOMPARE(w->model()->fan,7);QCOMPARE(w->model()->temperature,24.0);
+        w->model()->setTemperature(24.0);QSlider *temperature=home->findChild<QSlider *>("temperatureSlider");QVERIFY(temperature);
+        QCOMPARE(temperature->minimum(),32);QCOMPARE(temperature->maximum(),60);QCOMPARE(temperature->value(),48);
+        temperature->setValue(49);QCOMPARE(w->model()->temperature,24.5);
         QTest::mouseClick(button(home,"climateAC"),Qt::LeftButton);QVERIFY(!w->model()->ac);
         QTest::mouseClick(button(home,"frontDefrost"),Qt::LeftButton);QVERIFY(w->model()->frontDefrost);
         QTest::mouseClick(button(home,"rearDefrost"),Qt::LeftButton);QVERIFY(w->model()->rearDefrost);
         QTest::mouseClick(button(home,"recirculation"),Qt::LeftButton);QVERIFY(w->model()->recirculation);
         w->setPage(3);QWidget *detail=w->findChild<QWidget *>("detailClimate");QVERIFY(detail);QVERIFY(button(detail,"frontDefrost")->isChecked());QVERIFY(!button(detail,"climateAC")->isChecked());
-        QTest::mouseClick(button(detail,"temperatureUp"),Qt::LeftButton);QCOMPARE(w->model()->temperature,24.5);
-        w->setPage(0);QCOMPARE(w->model()->temperature,24.5);
+        QTest::mouseClick(button(detail,"temperatureUp"),Qt::LeftButton);QCOMPARE(w->model()->temperature,25.0);
+        w->setPage(0);QCOMPARE(w->model()->temperature,25.0);
     }
     void mediaControls() {
         QWidget *media=w->findChild<QWidget *>("homeMedia");QVERIFY(media);VehicleDataCenter *m=w->model();
@@ -67,7 +75,7 @@ private slots:
         QTest::keyClick(w,Qt::Key_Escape);QCOMPARE(w->currentPage(),0);
     }
     void screenshots() {
-        VehicleDataCenter *m=w->model();m->temperature=24;m->fan=4;m->ac=true;m->automatic=true;m->frontDefrost=false;m->rearDefrost=false;m->recirculation=false;m->track=0;m->position=137;m->playing=false;m->lowPressure=false;m->notify();
+        VehicleDataCenter *m=w->model();m->temperature=24;m->ac=true;m->automatic=true;m->frontDefrost=false;m->rearDefrost=false;m->recirculation=false;m->track=0;m->position=137;m->playing=false;m->lowPressure=false;m->notify();
         QString out=!qgetenv("HMI_SCREENSHOT_DIR").isEmpty()?QString::fromLocal8Bit(qgetenv("HMI_SCREENSHOT_DIR")):"screenshots";
         QDir().mkpath(out);
         const QStringList names=QStringList()<<"home"<<"vehicle"<<"navigation"<<"climate"<<"media"<<"settings";

@@ -38,7 +38,7 @@ public:
 protected: void paintEvent(QPaintEvent *event);
 private:
     QPushButton *minus, *plus, *autoButton, *acButton, *front, *rear, *recirc;
-    QSlider *fanSlider;
+    QSlider *temperatureSlider;
     void refresh();
 };
 class NavigationCard : public HmiCard {

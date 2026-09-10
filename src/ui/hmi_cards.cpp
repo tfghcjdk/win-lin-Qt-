@@ -126,7 +126,11 @@ ClimateCard::ClimateCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model
     front=button("frontDefrost",QString(),QRect(69,132,45,37),true);front->setIcon(glyph("defrost"));front->setAccessibleName(QStringLiteral("前挡除雾"));
     rear=button("rearDefrost",QString(),QRect(131,132,45,37),true);rear->setIcon(glyph("rear"));rear->setAccessibleName(QStringLiteral("后挡除雾"));
     recirc=button("recirculation",QString(),QRect(193,132,45,37),true);recirc->setIcon(glyph("recirc"));recirc->setAccessibleName(QStringLiteral("内循环"));
-    fanSlider=slider("fanSpeed",QRect(48,97,129,24),8);fanSlider->setAccessibleName(QStringLiteral("风量"));
+    temperatureSlider=slider("temperatureSlider",QRect(48,97,129,24),60);
+    temperatureSlider->setRange(32,60);
+    temperatureSlider->setSingleStep(1);
+    temperatureSlider->setPageStep(2);
+    temperatureSlider->setAccessibleName(QStringLiteral("空调设定温度"));
     connect(minus,&QPushButton::clicked,this,[this](){m->setTemperature(m->temperature-.5);});
     connect(plus,&QPushButton::clicked,this,[this](){m->setTemperature(m->temperature+.5);});
     connect(autoButton,&QPushButton::clicked,this,[this](bool v){m->automatic=v;m->notify();});
@@ -134,17 +138,17 @@ ClimateCard::ClimateCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model
     connect(front,&QPushButton::clicked,this,[this](bool v){m->frontDefrost=v;m->notify();});
     connect(rear,&QPushButton::clicked,this,[this](bool v){m->rearDefrost=v;m->notify();});
     connect(recirc,&QPushButton::clicked,this,[this](bool v){m->recirculation=v;m->notify();});
-    connect(fanSlider,&QSlider::valueChanged,m,&VehicleDataCenter::setFan);
+    connect(temperatureSlider,&QSlider::valueChanged,this,[this](int value){m->setTemperature(value/2.0);});
     connect(m,&VehicleDataCenter::changed,this,[this](){refresh();});refresh();
 }
-void ClimateCard::refresh(){minus->setEnabled(m->temperature>16);plus->setEnabled(m->temperature<30);autoButton->setChecked(m->automatic);acButton->setChecked(m->ac);front->setChecked(m->frontDefrost);rear->setChecked(m->rearDefrost);recirc->setChecked(m->recirculation);syncSlider(fanSlider,m->fan);}
+void ClimateCard::refresh(){minus->setEnabled(m->temperature>16);plus->setEnabled(m->temperature<30);autoButton->setChecked(m->automatic);acButton->setChecked(m->ac);front->setChecked(m->frontDefrost);rear->setChecked(m->rearDefrost);recirc->setChecked(m->recirculation);syncSlider(temperatureSlider,qRound(m->temperature*2.0));}
 void ClimateCard::paintEvent(QPaintEvent *) {QPainter p(this);setup(p);title(p,"snow",QStringLiteral("空调控制"));
     text(p,QRectF(65,45,116,44),QString::number(m->temperature,'f',1),31,Text,true,Qt::AlignCenter);text(p,QRectF(172,63,24,22),QStringLiteral("℃"),14);
-    icon(p,"fan",QRectF(20,100,20,20),Text);
+    icon(p,"snow",QRectF(20,100,20,20),Text);
     text(p,QRectF(67,170,53,17),QStringLiteral("前挡除雾"),9,Muted,false,Qt::AlignCenter);text(p,QRectF(129,170,53,17),QStringLiteral("后挡除雾"),9,Muted,false,Qt::AlignCenter);text(p,QRectF(193,170,46,17),QStringLiteral("内循环"),9,Muted,false,Qt::AlignCenter);
 }
 NavigationCard::NavigationCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSize(248,190),parent) {
-    QPushButton *b=button("openNavigation",QString(),QRect(4,34,240,151));b->setStyleSheet("background:transparent;border:0;");b->setAccessibleName(QStringLiteral("打开导航详情"));b->setToolTip(QStringLiteral("查看演示路线"));connect(b,&QPushButton::clicked,this,&NavigationCard::openRequested);
+    QPushButton *b=button("openNavigation",QString(),QRect(4,34,240,151));b->setStyleSheet("background:transparent;border:0;");b->setAccessibleName(QStringLiteral("打开导航详情"));b->setToolTip(QStringLiteral("查看路线"));connect(b,&QPushButton::clicked,this,&NavigationCard::openRequested);
 }
 void NavigationCard::paintEvent(QPaintEvent *) {
     QPainter p(this);setup(p);title(p,"nav",QStringLiteral("导航"));
@@ -157,7 +161,7 @@ void NavigationCard::paintEvent(QPaintEvent *) {
     p.fillRect(QRectF(8,35,232,33),QColor(4,18,34,235));icon(p,"arrow",QRectF(16,40,24,24),Text);
     text(p,QRectF(52,35,176,18),m->routeActive?QStringLiteral("前方 800 米"):QStringLiteral("暂无进行中的路线"),12,Text,true);
     text(p,QRectF(52,52,176,15),m->routeActive?QStringLiteral("进入 科技大道"):QStringLiteral("点击查看路线详情"),10,Muted);
-    p.fillRect(QRectF(8,155,232,27),QColor("#071828"));text(p,QRectF(15,157,127,22),m->routeActive?QStringLiteral("12 公里 · 28 分钟"):QStringLiteral("导航演示已结束"),11);text(p,QRectF(150,157,81,22),m->routeActive?QStringLiteral("预计 15:04"):"--:--",10,Muted);p.restore();
+    p.fillRect(QRectF(8,155,232,27),QColor("#071828"));text(p,QRectF(15,157,127,22),m->routeActive?QStringLiteral("12 公里 · 28 分钟"):QStringLiteral("导航已结束"),11);text(p,QRectF(150,157,81,22),m->routeActive?QStringLiteral("预计 15:04"):"--:--",10,Muted);p.restore();
 }
 CameraCard::CameraCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSize(172,190),parent) {
     QPushButton *b=button("openCamera",QStringLiteral("点击进入  ›"),QRect(13,145,146,34));b->setProperty("quiet",true);connect(b,&QPushButton::clicked,this,&CameraCard::openRequested);
@@ -165,9 +169,9 @@ CameraCard::CameraCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,Q
 void CameraCard::paintEvent(QPaintEvent *) {QPainter p(this);setup(p);title(p,"camera",QStringLiteral("倒车影像"));photo(p,"camera",QRectF(10,39,152,99));p.fillRect(QRectF(10,119,152,19),QColor(5,16,28,195));text(p,QRectF(16,119,146,19),QStringLiteral("静态示意 · 非实时影像"),9,Muted);}
 MediaCard::MediaCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSize(206,190),parent) {
     QPushButton *prev=button("previousTrack",QString(),QRect(23,143,36,35));prev->setIcon(glyph("previous"));prev->setProperty("quiet",true);prev->setAccessibleName(QStringLiteral("上一曲"));
-    play=button("playPause",QString(),QRect(86,138,37,40));play->setAccessibleName(QStringLiteral("演示播放暂停"));
+    play=button("playPause",QString(),QRect(86,138,37,40));play->setAccessibleName(QStringLiteral("播放暂停"));
     QPushButton *next=button("nextTrack",QString(),QRect(151,143,36,35));next->setIcon(glyph("next"));next->setProperty("quiet",true);next->setAccessibleName(QStringLiteral("下一曲"));
-    progress=slider("mediaProgress",QRect(12,115,182,19),m->duration());progress->setAccessibleName(QStringLiteral("媒体演示进度"));
+    progress=slider("mediaProgress",QRect(12,115,182,19),m->duration());progress->setAccessibleName(QStringLiteral("媒体播放进度"));
     connect(prev,&QPushButton::clicked,this,[this](){m->changeTrack(-1);});connect(next,&QPushButton::clicked,this,[this](){m->changeTrack(1);});
     connect(play,&QPushButton::clicked,this,[this](){m->playing=!m->playing;m->notify();});connect(progress,&QSlider::valueChanged,m,&VehicleDataCenter::setPosition);
     connect(m,&VehicleDataCenter::changed,this,[this](){refresh();});refresh();
@@ -175,5 +179,5 @@ MediaCard::MediaCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSi
 void MediaCard::refresh(){play->setIcon(glyph(m->playing?"pause":"play"));const bool blocked=progress->blockSignals(true);progress->setMaximum(m->duration());progress->setValue(m->position);progress->blockSignals(blocked);}
 void MediaCard::paintEvent(QPaintEvent *) {QPainter p(this);setup(p,true);title(p,"music",QStringLiteral("音乐"));photo(p,"cover",QRectF(12,41,68,66));
     text(p,QRectF(90,40,110,23),m->trackTitle(),11,Text,true);text(p,QRectF(90,65,108,20),m->artist(),10,Muted);text(p,QRectF(90,87,108,20),QStringLiteral("让每次出发都有意义"),9,Muted);
-    text(p,QRectF(12,132,60,17),QStringLiteral("演示播放"),9,Amber);text(p,QRectF(118,132,78,17),timeText(m->position)+" / "+timeText(m->duration()),9,Muted,false,Qt::AlignRight|Qt::AlignVCenter);
+    text(p,QRectF(12,132,60,17),QStringLiteral("播放状态"),9,Amber);text(p,QRectF(118,132,78,17),timeText(m->position)+" / "+timeText(m->duration()),9,Muted,false,Qt::AlignRight|Qt::AlignVCenter);
 }

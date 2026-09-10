@@ -43,7 +43,7 @@ $env:HMI_SCREENSHOT_DIR = 'D:\QTXM\Qt164\Qt1604\build\ui-validation'
 .\build\ui-tests\release\hmi-ui-tests.exe
 ```
 
-测试验证真实按钮点击、温度边界、风量独立性、跨页状态、媒体进度、路线切换、相机返回、断连与低压演示，并保存各页截图。无显示设备时可设置 `QT_QPA_PLATFORM=offscreen`；Windows 离屏测试需要 `QT_QPA_FONTDIR=C:\Windows\Fonts`。普通桌面运行不要设置离屏变量。
+测试验证真实按钮点击、北京时间跨日换算、温度按钮与滑条双向同步、温度边界、跨页状态、媒体进度、路线切换、相机返回、断连与低压场景，并保存各页截图。无显示设备时可设置 `QT_QPA_PLATFORM=offscreen`；Windows 离屏测试需要 `QT_QPA_FONTDIR=C:\Windows\Fonts`。普通桌面运行不要设置离屏变量。
 
 ## CMake 入口
 

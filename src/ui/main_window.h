@@ -4,6 +4,7 @@
 #include <QStackedWidget>
 #include <QPushButton>
 #include <QLabel>
+#include <QDateTime>
 #include "core/vehicle_data_center.h"
 class MainWindow : public QWidget {
     Q_OBJECT
@@ -13,6 +14,7 @@ public:
     int currentPage() const { return stack->currentIndex(); }
     void setPage(int index);
     bool cameraIsOpen() const;
+    static QString beijingClockText(const QDateTime &utcNow);
 public slots:
     void showCamera();
 protected:

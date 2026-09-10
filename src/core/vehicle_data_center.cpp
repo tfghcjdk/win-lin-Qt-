@@ -1,7 +1,7 @@
 #include "vehicle_data_center.h"
 #include <QtGlobal>
 VehicleDataCenter::VehicleDataCenter(QObject *parent)
-    : QObject(parent), temperature(24.0), fan(4), ac(true), automatic(true),
+    : QObject(parent), temperature(24.0), ac(true), automatic(true),
       frontDefrost(false), rearDefrost(false), recirculation(false), playing(true),
       routeActive(true), dataAvailable(true), lowPressure(false), position(137), track(0), volume(60) {}
 QString VehicleDataCenter::trackTitle() const {
@@ -15,7 +15,6 @@ QString VehicleDataCenter::artist() const {
 int VehicleDataCenter::duration() const { const int seconds[] = {276, 243, 208}; return seconds[track]; }
 void VehicleDataCenter::notify() { emit changed(); }
 void VehicleDataCenter::setTemperature(double value) { temperature = qBound(16.0, qRound(value * 2.0) / 2.0, 30.0); notify(); }
-void VehicleDataCenter::setFan(int value) { fan = qBound(0, value, 8); notify(); }
 void VehicleDataCenter::setPosition(int value) { position = qBound(0, value, duration()); notify(); }
 void VehicleDataCenter::setVolume(int value) { volume = qBound(0, value, 100); notify(); }
 void VehicleDataCenter::changeTrack(int delta) { track = (track + delta + 3) % 3; position = 0; notify(); }

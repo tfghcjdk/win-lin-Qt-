@@ -10,7 +10,6 @@ class VehicleDataCenter : public QObject {
 public:
     explicit VehicleDataCenter(QObject *parent = 0);
     double temperature;
-    int fan;
     bool ac, automatic, frontDefrost, rearDefrost, recirculation;
     bool playing, routeActive, dataAvailable, lowPressure;
     int position, track, volume;
@@ -18,7 +17,6 @@ public:
     QString artist() const;
     int duration() const;
     void setTemperature(double value);
-    void setFan(int value);
     void setPosition(int value);
     void setVolume(int value);
     void changeTrack(int delta);

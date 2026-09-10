@@ -17,37 +17,26 @@ void panel(QPainter &p, const QRectF &r, bool purple) {
 }
 QString timeText(int v) { return QStringLiteral("%1:%2").arg(v/60,2,10,QChar('0')).arg(v%60,2,10,QChar('0')); }
 void photo(QPainter &p, const QString &name, const QRectF &target) {
-    // Reuse only illustration areas of the supplied prototype. All UI text/controls are native Qt.
-    // This asset is a static design reference, never presented as a live camera or map.
+    // Camera and cover crops remain static design references; the vehicle uses a clean standalone asset.
     static const QImage source(QStringLiteral(":/hmi/prototype.jpg"));
-    QRectF crop;
-    if (name == "car") crop = QRectF(796,163,310,183);
-    else if (name == "camera") crop = QRectF(989,475,227,142);
-    else if (name == "cover") crop = QRectF(1259,477,103,99);
-    else crop = QRectF(1248,721,318,153);
+    static const QImage vehicle(QStringLiteral(":/hmi/vehicle.png"));
     p.save(); QPainterPath path; path.addRoundedRect(target,5,5); p.setClipPath(path);
     if (name == "car") {
-        // Clip to the vehicle silhouette, excluding all text around the reference photo.
-        QPainterPath silhouette;
-        silhouette.moveTo(805,278);
-        silhouette.cubicTo(806,250,821,231,851,222);
-        silhouette.cubicTo(878,187,900,177,945,174);
-        silhouette.cubicTo(986,169,1027,175,1044,188);
-        silhouette.cubicTo(1067,201,1092,222,1098,244);
-        silhouette.lineTo(1097,293);
-        silhouette.cubicTo(1092,319,1080,334,1066,331);
-        silhouette.cubicTo(1051,331,1048,319,1045,306);
-        silhouette.lineTo(927,316);
-        silhouette.cubicTo(916,341,896,344,882,332);
-        silhouette.lineTo(866,308);
-        silhouette.cubicTo(832,307,807,302,805,278);
-        silhouette.closeSubpath();
-        QTransform transform;
-        transform.translate(target.x(),target.y());
-        transform.scale(target.width()/crop.width(),target.height()/crop.height());
-        transform.translate(-crop.x(),-crop.y());
-        p.setClipPath(transform.map(silhouette),Qt::IntersectClip);
+        if (!vehicle.isNull()) {
+            QSizeF fitted=vehicle.size();
+            fitted.scale(target.size(),Qt::KeepAspectRatio);
+            QRectF vehicleTarget(QPointF(0,0),fitted);
+            vehicleTarget.moveCenter(target.center());
+            p.drawImage(vehicleTarget,vehicle);
+        }
+        else p.fillRect(target,QColor("#17364e"));
+        p.restore();
+        return;
     }
+    QRectF crop;
+    if (name == "camera") crop = QRectF(989,475,227,142);
+    else if (name == "cover") crop = QRectF(1259,477,103,99);
+    else crop = QRectF(1248,721,318,153);
     if (!source.isNull()) p.drawImage(target, source, crop);
     else p.fillRect(target,QColor("#17364e"));
     p.restore();
