@@ -43,8 +43,8 @@ Qt1604/
 │   │   ├── can_bus.cpp
 │   │   ├── serial_port.h
 │   │   ├── serial_port.cpp
-│   │   ├── camera_v4l2.h
-│   │   └── camera_v4l2.cpp
+│   │   ├── camera_v4l2.h           V4L2 摄像头采集线程接口
+│   │   └── camera_v4l2.cpp         MJPEG/YUYV、MMAP 与安全释放实现
 │   ├── ui/
 │   │   ├── README.md
 │   │   ├── main_window.h

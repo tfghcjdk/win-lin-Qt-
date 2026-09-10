@@ -166,7 +166,7 @@ void NavigationCard::paintEvent(QPaintEvent *) {
 CameraCard::CameraCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSize(172,190),parent) {
     QPushButton *b=button("openCamera",QStringLiteral("点击进入  ›"),QRect(13,145,146,34));b->setProperty("quiet",true);connect(b,&QPushButton::clicked,this,&CameraCard::openRequested);
 }
-void CameraCard::paintEvent(QPaintEvent *) {QPainter p(this);setup(p);title(p,"camera",QStringLiteral("倒车影像"));photo(p,"camera",QRectF(10,39,152,99));p.fillRect(QRectF(10,119,152,19),QColor(5,16,28,195));text(p,QRectF(16,119,146,19),QStringLiteral("静态示意 · 非实时影像"),9,Muted);}
+void CameraCard::paintEvent(QPaintEvent *) {QPainter p(this);setup(p);title(p,"camera",QStringLiteral("倒车影像"));photo(p,"camera",QRectF(10,39,152,99));p.fillRect(QRectF(10,119,152,19),QColor(5,16,28,195));text(p,QRectF(16,119,146,19),QStringLiteral("进入时自动连接摄像头"),9,Muted);}
 MediaCard::MediaCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSize(206,190),parent) {
     QPushButton *prev=button("previousTrack",QString(),QRect(23,143,36,35));prev->setIcon(glyph("previous"));prev->setProperty("quiet",true);prev->setAccessibleName(QStringLiteral("上一曲"));
     play=button("playPause",QString(),QRect(86,138,37,40));play->setAccessibleName(QStringLiteral("播放暂停"));
