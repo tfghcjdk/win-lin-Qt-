@@ -8,4 +8,4 @@ include(hmi_sources.pri)
 SOURCES += src/main.cpp
 FORMS += src/ui/main_window.ui
 RESOURCES += assets/hmi.qrc
-DISTFILES += README.md PRD.md TECH_SPEC.md CHANGELOG.md assets/qss/dark_theme.qss
+DISTFILES += README.md PRD.md TECH_SPEC.md CHANGELOG.md assets/qss/dark_theme.qss config/camera_calibration.ini.example

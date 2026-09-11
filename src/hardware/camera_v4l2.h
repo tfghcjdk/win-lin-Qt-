@@ -20,6 +20,7 @@ public:
 
 signals:
     void frameReady(const QImage &image);
+    void obstacleDistanceReady(int centimeters);
     void message(const QString &text);
 
 protected:

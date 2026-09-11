@@ -9,6 +9,8 @@
 #include "ui/main_window.h"
 #include "ui/hmi_cards.h"
 #include "hardware/camera_v4l2.h"
+#include "hardware/monocular_distance.h"
+#include <cmath>
 
 class UiTests : public QObject {
     Q_OBJECT
@@ -42,6 +44,9 @@ private slots:
         QCOMPARE(camera.device,QStringLiteral("/dev/video9"));
         QCOMPARE(camera.requestedSize,QSize(1280,720));
         QCOMPARE(camera.requestedFps,30);
+        const double distance=MonocularDistanceEstimator::groundDistanceCm(360,700,360,60,30);
+        QVERIFY(std::fabs(distance-103.923)<.01);
+        QCOMPARE(MonocularDistanceEstimator::groundDistanceCm(360,0,360,60,30),-1.0);
     }
     void climateBoundariesAndSharedState() {
         QWidget *home=w->findChild<QWidget *>("homeClimate");QVERIFY(home);

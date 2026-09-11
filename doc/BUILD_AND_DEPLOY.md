@@ -54,3 +54,9 @@ $env:HMI_SCREENSHOT_DIR = 'D:\QTXM\Qt164\Qt1604\build\ui-validation'
 目标仍为 X6818、Linux 3.4.39、Qt 5.4.1。必须确认 SDK、armv7l ABI、浮点约定、sysroot、Qt 安装、显示/触控插件、中文字体、设备权限和部署路径。代码没有引入 Qt 5.6+ API，但尚未进行真实 Qt 5.4.1 ARM 交叉编译与板端运行。
 
 `build_arm.sh`、`deploy_to_board.sh`、硬件驱动文件和 CAN 仿真脚本仍为占位，不能用它们完成板端构建或部署。
+
+## OpenCV 3.4.16
+
+Linux构建会启用 `HMI_WITH_OPENCV`，链接 `opencv_core`、`opencv_imgproc` 和 `opencv_calib3d`。板端原生构建默认从 `/usr/include` 取头文件、从 `/usr/lib` 链接和加载库；交叉编译默认从 `QMAKE_SYSROOT/usr` 取ARM开发文件。独立staging目录可通过 `qmake OPENCV_ROOT=/path/to/opencv-arm-root` 指定。
+
+只有运行库位于开发板 `/usr/lib` 还不够：编译端必须同时具有同一ARM ABI的OpenCV 3.4.16头文件和链接库。相机标定与 `/etc/nev-smarthmi/camera_calibration.ini` 配置见 [MONOCULAR_DISTANCE.md](MONOCULAR_DISTANCE.md)。

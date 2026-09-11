@@ -1,4 +1,5 @@
 #include "camera_v4l2.h"
+#include "monocular_distance.h"
 #include <QElapsedTimer>
 #include <QFile>
 #include <QImageReader>
@@ -70,6 +71,7 @@ void CameraV4l2::run() {
     };
 
     const auto capture=[&]() {
+        MonocularDistanceEstimator distanceEstimator;
         v4l2_capability cap={};
         if (control(fd,VIDIOC_QUERYCAP,&cap)<0) { error("VIDIOC_QUERYCAP"); return; }
         unsigned capabilities=cap.capabilities;
@@ -136,8 +138,10 @@ void CameraV4l2::run() {
         v4l2_buf_type type=V4L2_BUF_TYPE_VIDEO_CAPTURE;
         if (control(fd,VIDIOC_STREAMON,&type)<0) { error("VIDIOC_STREAMON"); return; }
         streaming=true;
-        emit message(QStringLiteral("摄像头已连接：%1，%2x%3，%4").arg(device).arg(width).arg(height)
-                     .arg(format.fmt.pix.pixelformat==V4L2_PIX_FMT_MJPEG?"MJPEG":"YUYV"));
+        QString connected=QStringLiteral("摄像头已连接：%1，%2x%3，%4").arg(device).arg(width).arg(height)
+                          .arg(format.fmt.pix.pixelformat==V4L2_PIX_FMT_MJPEG?"MJPEG":"YUYV");
+        if (!distanceEstimator.isReady()) connected+=QStringLiteral("；%1").arg(distanceEstimator.errorString());
+        emit message(connected);
 
         QElapsedTimer noFrame;
         noFrame.start();
@@ -188,6 +192,8 @@ void CameraV4l2::run() {
                     emit message(QStringLiteral("画面解码失败，请检查 Qt JPEG 插件"));
                     return;
                 }
+                const MonocularDistanceEstimator::Measurement measurement=distanceEstimator.measure(image);
+                if (measurement.updated) emit obstacleDistanceReady(measurement.valid?measurement.distanceCm:-1);
                 pending.storeRelease(1);
                 emit frameReady(image);
             }

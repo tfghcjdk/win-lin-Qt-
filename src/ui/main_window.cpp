@@ -41,10 +41,11 @@ public:
         setObjectName("cameraOverlay");setGeometry(0,0,1024,600);
         QPushButton *close=new QPushButton(QStringLiteral("返回  ·  Esc"),this);close->setObjectName("closeCamera");close->setGeometry(869,18,135,36);connect(close,&QPushButton::clicked,this,[this](){hide();});
         connect(&camera,&CameraV4l2::frameReady,this,[this](const QImage &image){frame=image.mirrored(true,false);camera.acknowledge();update();});
+        connect(&camera,&CameraV4l2::obstacleDistanceReady,state,&VehicleDataCenter::setRearObstacleDistance);
         connect(&camera,&CameraV4l2::message,this,[this](const QString &text){status=text;update();});
         connect(state,&VehicleDataCenter::changed,this,[this](){update();});
     }
-    ~CameraOverlay(){stopCamera();}
+    ~CameraOverlay(){if(camera.isRunning()){camera.stop();camera.wait();}}
 protected:
     void showEvent(QShowEvent *event){QWidget::showEvent(event);startCamera();}
     void hideEvent(QHideEvent *event){stopCamera();QWidget::hideEvent(event);}
@@ -63,7 +64,7 @@ protected:
     }
 private:
     void startCamera(){if(camera.isRunning())return;frame=QImage();status=QStringLiteral("正在连接 %1").arg(camera.device);camera.start();update();}
-    void stopCamera(){if(!camera.isRunning())return;camera.stop();camera.wait();frame=QImage();}
+    void stopCamera(){if(camera.isRunning()){camera.stop();camera.wait();}frame=QImage();state->setRearObstacleDistance(-1);}
     static void guidePath(QPainter &p,const QPainterPath &path,const QColor &color){
         p.setPen(QPen(QColor(0,0,0,165),8,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));p.drawPath(path);
         p.setPen(QPen(color,4,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));p.drawPath(path);
@@ -190,7 +191,7 @@ QWidget *MainWindow::mediaPage() {
 }
 QWidget *MainWindow::settingsPage() {
     QWidget *page=new PageShell(QStringLiteral("设置"),QStringLiteral("系统信息与测试场景"));page->setObjectName("settingsPage");
-    info(page,QRect(0,72,447,218),QStringLiteral("NEV-SmartHMI"),QStringLiteral("界面版本 &nbsp; 0.2.6-ui<br/><br/>设计分辨率 &nbsp; 1024 × 600<br/><br/>兼容目标 &nbsp; Qt 5.4.1 / C++11<br/><br/>当前运行 Qt &nbsp; %1").arg(QString::fromLatin1(qVersion())));
+    info(page,QRect(0,72,447,218),QStringLiteral("NEV-SmartHMI"),QStringLiteral("界面版本 &nbsp; 0.2.7-ui<br/><br/>设计分辨率 &nbsp; 1024 × 600<br/><br/>兼容目标 &nbsp; Qt 5.4.1 / C++11<br/><br/>当前运行 Qt &nbsp; %1").arg(QString::fromLatin1(qVersion())));
     info(page,QRect(461,72,451,218),QStringLiteral("连接说明"),QStringLiteral("车辆、胎压和能量数据为模拟来源。<br/><br/>Linux 已接入 V4L2 倒车摄像头；CAN / 串口、GPS、网络状态和音频后端尚未接入。<br/><br/>北京时间按本机 UTC+8 计算，不执行 NTP / RTC 写入。"));
     info(page,QRect(0,303,912,116),QStringLiteral("检查不同的数据状态"),QStringLiteral("切换模拟数据或低胎压场景后，可返回首页 / 车辆状态页查看反馈。<br/><br/>低胎压场景只用于验证警报视觉，不定义真实车辆的报警阈值。"));
     QPushButton *connection=action(page,"toggleData",QString(),QRect(17,437,205,46));
