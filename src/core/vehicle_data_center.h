@@ -12,7 +12,7 @@ public:
     double temperature;
     bool ac, automatic, frontDefrost, rearDefrost, recirculation;
     bool playing, routeActive, dataAvailable, lowPressure;
-    int position, track, volume;
+    int position, track, volume, rearObstacleDistanceCm;
     QString trackTitle() const;
     QString artist() const;
     int duration() const;
@@ -22,6 +22,8 @@ public:
     void changeTrack(int delta);
     void setDataAvailable(bool available);
     void setLowPressure(bool low);
+    void setRearObstacleDistance(int centimeters);
+    bool rearObstacleWarning() const;
     void notify();
 public slots:
     void tick();

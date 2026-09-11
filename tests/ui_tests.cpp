@@ -79,6 +79,9 @@ private slots:
         w->setPage(5);QTest::mouseClick(button(w,"toggleData"),Qt::LeftButton);QVERIFY(!w->model()->dataAvailable);
         QTest::mouseClick(button(w,"toggleData"),Qt::LeftButton);QVERIFY(w->model()->dataAvailable);
         QTest::mouseClick(button(w,"togglePressure"),Qt::LeftButton);QVERIFY(w->model()->lowPressure);
+        QTest::mouseClick(button(w,"toggleObstacle"),Qt::LeftButton);QVERIFY(w->model()->rearObstacleWarning());QCOMPARE(w->model()->rearObstacleDistanceCm,55);
+        w->model()->setRearObstacleDistance(81);QVERIFY(!w->model()->rearObstacleWarning());w->model()->setRearObstacleDistance(80);QVERIFY(w->model()->rearObstacleWarning());
+        QTest::mouseClick(button(w,"toggleObstacle"),Qt::LeftButton);QVERIFY(!w->model()->rearObstacleWarning());
         QTest::keyClick(w,Qt::Key_Escape);QCOMPARE(w->currentPage(),0);
     }
     void screenshots() {
@@ -87,7 +90,8 @@ private slots:
         QDir().mkpath(out);
         const QStringList names=QStringList()<<"home"<<"vehicle"<<"navigation"<<"climate"<<"media"<<"settings";
         for(int i=0;i<6;++i){w->setPage(i);QTest::qWait(20);QVERIFY(w->grab().save(out+"/"+names[i]+".png"));}
-        w->setPage(0);w->showCamera();QTest::qWait(20);QVERIFY(w->grab().save(out+"/camera.png"));QTest::keyClick(w,Qt::Key_Escape);
+        w->setPage(0);m->setRearObstacleDistance(-1);w->showCamera();QTest::qWait(20);QVERIFY(w->grab().save(out+"/camera.png"));
+        m->setRearObstacleDistance(55);QTest::qWait(20);QVERIFY(w->grab().save(out+"/camera-warning.png"));QTest::keyClick(w,Qt::Key_Escape);m->setRearObstacleDistance(-1);
         m->setDataAvailable(false);QTest::qWait(20);QVERIFY(w->grab().save(out+"/offline.png"));m->setDataAvailable(true);m->setLowPressure(true);QTest::qWait(20);QVERIFY(w->grab().save(out+"/low-pressure.png"));
     }
     void cleanupTestCase(){delete w;}

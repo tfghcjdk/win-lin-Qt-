@@ -925,7 +925,7 @@ QSlider::handle:horizontal { width: 16px; margin: -5px 0; background-color: #EAF
                   <string>background-color: #091D30; color: #688BA7; border: 1px dashed #285577; border-radius: 6px;</string>
                  </property>
                  <property name="text">
-                  <string>进入倒车影像后自动打开摄像头</string>
+                  <string>进入后自动打开摄像头，并显示平滑辅助线和障碍物警告</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignCenter</set>
@@ -1362,6 +1362,16 @@ QSlider::handle:horizontal { width: 16px; margin: -5px 0; background-color: #EAF
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnObstacleWarningPreview">
+            <property name="text">
+             <string>预览障碍物警告</string>
+            </property>
+            <property name="accessibleName">
+             <string>障碍物警告预览</string>
             </property>
            </widget>
           </item>
