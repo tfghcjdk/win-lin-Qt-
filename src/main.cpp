@@ -2,6 +2,7 @@
 #include <QFile>
 #include <QFontDatabase>
 #include <QTimer>
+#include "core/system_manager.h"
 #include "ui/main_window.h"
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
@@ -17,6 +18,7 @@ int main(int argc, char *argv[]) {
     app.setFont(font);
     QFile style(QStringLiteral(":/hmi/theme.qss"));
     if (style.open(QIODevice::ReadOnly)) app.setStyleSheet(QString::fromUtf8(style.readAll()));
+    SystemManager::initializeClock();
     MainWindow window;
     window.show();
     return app.exec();

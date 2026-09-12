@@ -37,7 +37,7 @@ private slots:
     }
     void beijingClockUsesUtcPlusEight() {
         const QDateTime utc(QDate(2026,1,1),QTime(16,5),Qt::UTC);
-        QCOMPARE(MainWindow::beijingClockText(utc),QStringLiteral("2026年1月2日   星期五   00:05"));
+        QCOMPARE(MainWindow::beijingClockText(utc),QStringLiteral("2026年1月2日   星期五   00:05:00"));
     }
     void cameraDefaultsToClearVideo9Capture() {
         CameraV4l2 camera;

@@ -1,3 +1,12 @@
-// NEV-SmartHMI — 框架占位文件
-// 系统管理：后续管理时间、网络、连接状态与配置。
-// TODO: 在功能开发阶段实现；当前无可编译的应用逻辑。
+#ifndef SYSTEM_MANAGER_H
+#define SYSTEM_MANAGER_H
+
+// Initializes the board clock without blocking the UI. On the X6818 target it
+// restores the system clock from the RTC and periodically synchronizes the
+// system clock and RTC from verified NTP replies while networking is available.
+class SystemManager {
+public:
+    static void initializeClock();
+};
+
+#endif

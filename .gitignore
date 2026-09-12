@@ -37,6 +37,8 @@ ui_*.h
 .vs/
 .vscode/
 .idea/
+.codex-doc-review/
+.workbuddy/
 __pycache__/
 *.py[cod]
 .pytest_cache/

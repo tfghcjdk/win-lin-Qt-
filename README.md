@@ -1,6 +1,6 @@
 # NEV-SmartHMI 新能源汽车智能座舱
 
-当前版本：**0.2.7-ui**。已实现 1024 × 600 Qt Widgets 页面与交互，可编译运行。
+当前版本：**0.2.9-ui**。已实现 1024 × 600 Qt Widgets 页面与交互，可编译运行。
 
 ## 打开与运行
 
@@ -10,7 +10,7 @@
 
 ## 已实现的页面
 
-- **首页**：顶部实时北京时间和连接状态、左侧导航、车速与档位、续航与四轮胎压、能量流、空调、导航、倒车预览、媒体、行车统计和维护提醒。
+- **首页**：顶部每秒更新的实时北京时间和连接状态、左侧导航、车速与档位、续航与四轮胎压、能量流、空调、导航、倒车预览、媒体、行车统计和维护提醒。
 - **车辆状态**：放大的续航 / 胎压、能量与行程卡片；支持正常、数据断开及左前低胎压演示场景。
 - **导航**：离线示意地图与路线卡片，可开始 / 结束演示导航。
 - **空调**：0.5 ℃ 步进、16–30 ℃ 设置范围、中间滑条直接调节温度、Auto、A/C、前后除雾与内循环；首页和详情共享状态。
@@ -18,7 +18,7 @@
 - **设置**：版本和运行环境、演示数据断连、低胎压场景及退出操作。
 - **倒车影像**：进入页面时自动打开 Linux `/dev/video9`，优先请求 1280 × 720 / 30 FPS；画面水平镜像，以 Qt 平滑算法按比例显示并叠加带深色描边的绿、黄、红平滑曲线辅助线。Linux 使用 OpenCV 3.4.16 单目地面测距，80 cm 内触发后方障碍物警告；返回或按 Esc 自动停止并释放设备。
 
-车辆数值、地图和媒体计时仍为模拟数据。Linux 已接入 V4L2 摄像头；尚未接入 CAN / 串口、实时地图、音频输出、NTP / RTC 同步和持久化。单目测距必须安装有效的 `/etc/nev-smarthmi/camera_calibration.ini` 后才启用；温度范围、胎压场景、测距阈值和辅助线均未按实车标定。
+车辆数值、地图和媒体计时仍为模拟数据。Linux 已接入 V4L2 摄像头和定期 NTP / RTC 校时；尚未接入 CAN / 串口、实时地图和音频输出。单目测距必须安装有效的 `/etc/nev-smarthmi/camera_calibration.ini` 后才启用；温度范围、胎压场景、测距阈值和辅助线均未按实车标定。RTC 使用方法和断电保持条件见 [时间同步与 RTC 部署说明](doc/TIME_SYNC_RTC.md)。
 
 ## 设计与实现
 
@@ -38,6 +38,7 @@ Qt Designer 表单位于 `src/ui/main_window.ui`，已加入 `NEV-SmartHMI.pro` 
 | [TECH_SPEC.md](TECH_SPEC.md) | 架构和 Qt 5.4.1 兼容约束 |
 | [UI_IMPLEMENTATION.md](doc/UI_IMPLEMENTATION.md) | 当前页面、状态模型、验证结果和限制 |
 | [MONOCULAR_DISTANCE.md](doc/MONOCULAR_DISTANCE.md) | OpenCV 3.4.16 板端依赖、标定配置、算法与验证限制 |
+| [TIME_SYNC_RTC.md](doc/TIME_SYNC_RTC.md) | 定期 NTP 校时、RTC 写入和离线时间验证 |
 | [BUILD_AND_DEPLOY.md](doc/BUILD_AND_DEPLOY.md) | Windows 构建、运行、测试及 ARM 待办 |
 | [CHANGELOG.md](CHANGELOG.md) | 实际变更日志 |
 | [BUG_TRACKER.md](BUG_TRACKER.md) | 缺陷与修复记录 |

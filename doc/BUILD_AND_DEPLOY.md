@@ -57,6 +57,41 @@ $env:HMI_SCREENSHOT_DIR = 'D:\QTXM\Qt164\Qt1604\build\ui-validation'
 
 ## OpenCV 3.4.16
 
-Linux构建会启用 `HMI_WITH_OPENCV`，链接 `opencv_core`、`opencv_imgproc` 和 `opencv_calib3d`。板端原生构建默认从 `/usr/include` 取头文件、从 `/usr/lib` 链接和加载库；交叉编译默认从 `QMAKE_SYSROOT/usr` 取ARM开发文件。独立staging目录可通过 `qmake OPENCV_ROOT=/path/to/opencv-arm-root` 指定。
+Linux构建会启用 `HMI_WITH_OPENCV`，链接 `opencv_core`、`opencv_imgproc` 和 `opencv_calib3d`。qmake依次使用显式的 `OPENCV_ROOT`、环境变量 `OPENCV_ROOT`、Qt Kit的 `QMAKE_SYSROOT/usr` 或交叉编译器 `-print-sysroot` 返回目录下的 `usr`。找不到 `opencv2/calib3d.hpp` 时会在qmake阶段停止，防止交叉编译错误引用Ubuntu主机的 `/usr/include`。
 
-只有运行库位于开发板 `/usr/lib` 还不够：编译端必须同时具有同一ARM ABI的OpenCV 3.4.16头文件和链接库。相机标定与 `/etc/nev-smarthmi/camera_calibration.ini` 配置见 [MONOCULAR_DISTANCE.md](MONOCULAR_DISTANCE.md)。
+X6818 Buildroot推荐使用：
+
+```sh
+cd ~/x6818_linux_180209/buildroot
+find output -path '*/opencv2/calib3d.hpp' -print
+find output -name 'libopencv_calib3d.so*' -print
+```
+
+如果两个文件都位于 `output/staging/usr`，在Qt Creator的qmake附加参数中填写：
+
+```text
+OPENCV_ROOT=/home/xdedu/x6818_linux_180209/buildroot/output/staging/usr
+```
+
+然后清理构建目录、重新执行qmake并重新构建。也可以在命令行使用：
+
+```sh
+qmake NEV-SmartHMI.pro OPENCV_ROOT=/home/xdedu/x6818_linux_180209/buildroot/output/staging/usr
+make -j4
+```
+
+只有运行库位于开发板 `/usr/lib` 还不够：编译端必须同时具有同一ARM ABI的OpenCV 3.4.16头文件、ARM链接库和无版本 `.so` 开发链接。若 `output/staging` 中没有这些文件，需要用原来构建板端OpenCV 3.4.16的交叉编译配置执行安装到staging，不能使用Ubuntu的x86-64 OpenCV库。相机标定与 `/etc/nev-smarthmi/camera_calibration.ini` 配置见 [MONOCULAR_DISTANCE.md](MONOCULAR_DISTANCE.md)。
+
+## Qt HTTPS 独立验证
+
+`tools/navigation_https_probe` 是不依赖OpenCV和界面的ARM命令行程序，用于验证QtNetwork能否直接加载板端OpenSSL和 `/etc/ssl/certs/ca-certificates.crt` 并访问高德HTTPS接口。它读取 `/Kd1234/config/navigation.ini`，只打印Key长度，不输出Key内容。
+
+使用X6818 Qt Kit单独打开 `tools/navigation_https_probe/navigation_https_probe.pro`，构建后将 `navigation-https-probe` 上传至 `/Kd1234`，执行：
+
+```sh
+chmod +x /Kd1234/navigation-https-probe
+/Kd1234/navigation-https-probe
+echo $?
+```
+
+成功输出包含 `Qt SSL support: yes`、非零CA证书数量和 `RESULT: HTTPS and AMap API OK`，退出码为0。该程序不调用BusyBox `wget`，因此不要求安装 `/usr/bin/openssl` 命令。

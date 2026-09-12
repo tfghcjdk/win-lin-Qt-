@@ -8,6 +8,7 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt5 5.4.1 REQUIRED COMPONENTS Core Gui Widgets)
 add_executable(NEV-SmartHMI WIN32
     src/main.cpp src/core/vehicle_data_center.cpp src/core/vehicle_data_center.h
+    src/core/system_manager.cpp src/core/system_manager.h
     src/hardware/camera_v4l2.cpp src/hardware/camera_v4l2.h
     src/hardware/monocular_distance.cpp src/hardware/monocular_distance.h
     src/ui/main_window.cpp src/ui/main_window.h

@@ -130,7 +130,7 @@ void MainWindow::showCamera(){cameraOverlay->show();cameraOverlay->raise();}
 QString MainWindow::beijingClockText(const QDateTime &utcNow) {
     const QDateTime beijing=utcNow.toUTC().addSecs(8*60*60);
     const QStringList week=QStringList()<<QStringLiteral("星期一")<<QStringLiteral("星期二")<<QStringLiteral("星期三")<<QStringLiteral("星期四")<<QStringLiteral("星期五")<<QStringLiteral("星期六")<<QStringLiteral("星期日");
-    return beijing.toString(QStringLiteral("yyyy年M月d日"))+"   "+week[beijing.date().dayOfWeek()-1]+"   "+beijing.toString("HH:mm");
+    return beijing.toString(QStringLiteral("yyyy年M月d日"))+"   "+week[beijing.date().dayOfWeek()-1]+"   "+beijing.toString("HH:mm:ss");
 }
 void MainWindow::keyPressEvent(QKeyEvent *event){if(event->key()==Qt::Key_Escape){if(cameraIsOpen())cameraOverlay->hide();else if(currentPage()!=0)setPage(0);else close();event->accept();return;}QWidget::keyPressEvent(event);}
 void MainWindow::paintEvent(QPaintEvent *) {
@@ -191,8 +191,8 @@ QWidget *MainWindow::mediaPage() {
 }
 QWidget *MainWindow::settingsPage() {
     QWidget *page=new PageShell(QStringLiteral("设置"),QStringLiteral("系统信息与测试场景"));page->setObjectName("settingsPage");
-    info(page,QRect(0,72,447,218),QStringLiteral("NEV-SmartHMI"),QStringLiteral("界面版本 &nbsp; 0.2.7-ui<br/><br/>设计分辨率 &nbsp; 1024 × 600<br/><br/>兼容目标 &nbsp; Qt 5.4.1 / C++11<br/><br/>当前运行 Qt &nbsp; %1").arg(QString::fromLatin1(qVersion())));
-    info(page,QRect(461,72,451,218),QStringLiteral("连接说明"),QStringLiteral("车辆、胎压和能量数据为模拟来源。<br/><br/>Linux 已接入 V4L2 倒车摄像头；CAN / 串口、GPS、网络状态和音频后端尚未接入。<br/><br/>北京时间按本机 UTC+8 计算，不执行 NTP / RTC 写入。"));
+    info(page,QRect(0,72,447,218),QStringLiteral("NEV-SmartHMI"),QStringLiteral("界面版本 &nbsp; 0.2.9-ui<br/><br/>设计分辨率 &nbsp; 1024 × 600<br/><br/>兼容目标 &nbsp; Qt 5.4.1 / C++11<br/><br/>当前运行 Qt &nbsp; %1").arg(QString::fromLatin1(qVersion())));
+    info(page,QRect(461,72,451,218),QStringLiteral("连接说明"),QStringLiteral("车辆、胎压和能量数据为模拟来源。<br/><br/>Linux 已接入 V4L2 倒车摄像头；CAN / 串口、GPS、网络状态和音频后端尚未接入。<br/><br/>北京时间每秒更新；联网时每 6 小时校准系统时间与硬件 RTC。"));
     info(page,QRect(0,303,912,116),QStringLiteral("检查不同的数据状态"),QStringLiteral("切换模拟数据或低胎压场景后，可返回首页 / 车辆状态页查看反馈。<br/><br/>低胎压场景只用于验证警报视觉，不定义真实车辆的报警阈值。"));
     QPushButton *connection=action(page,"toggleData",QString(),QRect(17,437,205,46));
     QPushButton *pressure=action(page,"togglePressure",QString(),QRect(238,437,205,46));

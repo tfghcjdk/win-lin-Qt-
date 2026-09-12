@@ -2,6 +2,28 @@
 
 仅记录实际完成的变更。未实现的功能放入 PRD 或阶段计划，不计作已完成。
 
+## [0.2.9-ui] - 2026-09-11
+
+### 修改
+
+- 将一次性 NTP / RTC 写入调整为定期校时：启动时从 RTC 恢复，联网且距离上次成功校时达到 6 小时后更新系统时间与 RTC。
+- 断网或 NTP 请求失败时保留现有时间，每 10 分钟重新检查；同步状态保存在 `/Kd1234/config/rtc_time_sync.state`。
+- 兼容旧 `.rtc_time_synced_once` 标记，升级后会按其时间判断首次定期校时。
+- 修正ARM交叉编译的OpenCV查找逻辑，禁止缺少sysroot时回退到Ubuntu主机 `/usr/include`，并在缺少匹配的OpenCV 3.4.16开发头文件时给出明确的qmake错误。
+- 增加独立的Qt HTTPS检测程序，直接验证板端QtNetwork、OpenSSL动态库、CA证书和高德Web服务Key，不依赖BusyBox `wget` 调用外部 `openssl` 命令。
+
+## [0.2.8-ui] - 2026-09-11
+
+### 新增
+
+- 增加 Linux 开发板一次性 NTP 校时：直接发送标准 NTP UDP 请求，不依赖板端安装 `ntpd`。
+- 系统时间设置成功后将 UTC 写入 `/dev/rtc0`、`/dev/rtc1` 或 `/dev/rtc`，两步均成功才创建 `/Kd1234/config/.rtc_time_synced_once`，后续启动不再写 RTC。
+- 后续启动只读取已经同步的 RTC 来恢复系统时间，并将校时结果记录到 `/Kd1234/config/time_sync.log`。
+
+### 修改
+
+- 顶部北京时间增加秒钟显示，继续每秒刷新并固定使用 UTC+8。
+
 ## [0.2.7-ui] - 2026-09-11
 
 ### 新增

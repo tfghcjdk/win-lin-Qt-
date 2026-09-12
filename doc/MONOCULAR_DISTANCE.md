@@ -4,7 +4,7 @@
 
 目标板运行时需要在 `/usr/lib` 提供 ARM 版本的 `libopencv_core.so.3.4`、`libopencv_imgproc.so.3.4`、`libopencv_calib3d.so.3.4` 及其依赖，并提供可供链接的 `.so` 符号链接。开发头文件需要位于 `/usr/include/opencv2`；交叉编译时则放入工具链 sysroot 对应的 `usr/include` 和 `usr/lib`。
 
-qmake 在板端原生构建时使用 `/usr`。交叉编译时自动使用 `QMAKE_SYSROOT/usr`；若 OpenCV 位于独立 staging 目录，可在 qmake 时传入 `OPENCV_ROOT=/path/to/opencv-arm-root`。生成的程序运行时搜索路径包含 `/usr/lib`。
+交叉编译时qmake优先使用显式 `OPENCV_ROOT`，随后检查环境变量、Qt Kit sysroot和交叉编译器sysroot；不会回退到Ubuntu主机 `/usr/include`。若OpenCV位于独立staging目录，在qmake时传入 `OPENCV_ROOT=/path/to/opencv-arm-root`。该目录下必须存在 `include/opencv2/calib3d.hpp` 和 `lib/libopencv_*.so`，生成的程序运行时搜索路径包含开发板 `/usr/lib`。
 
 ## 标定文件
 
