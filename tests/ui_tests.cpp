@@ -8,6 +8,7 @@
 #include <QTime>
 #include "ui/main_window.h"
 #include "ui/hmi_cards.h"
+#include "core/navigation_service.h"
 #include "hardware/camera_v4l2.h"
 #include "hardware/monocular_distance.h"
 #include <cmath>
@@ -98,6 +99,44 @@ private slots:
         w->setPage(0);m->setRearObstacleDistance(-1);w->showCamera();QTest::qWait(20);QVERIFY(w->grab().save(out+"/camera.png"));
         m->setRearObstacleDistance(55);QTest::qWait(20);QVERIFY(w->grab().save(out+"/camera-warning.png"));QTest::keyClick(w,Qt::Key_Escape);m->setRearObstacleDistance(-1);
         m->setDataAvailable(false);QTest::qWait(20);QVERIFY(w->grab().save(out+"/offline.png"));m->setDataAvailable(true);m->setLowPressure(true);QTest::qWait(20);QVERIFY(w->grab().save(out+"/low-pressure.png"));
+    }
+    void navigationRouteParser() {
+        // Fixture first; fall back to the repo copy when running from another cwd.
+        QString fixturePath=QStringLiteral("fixtures/route_v5_sample.json");
+        if(!QFile::exists(fixturePath))fixturePath=QStringLiteral("../tests/fixtures/route_v5_sample.json");
+        QFile fixture(fixturePath);QVERIFY2(fixture.open(QIODevice::ReadOnly),qPrintable(fixturePath));
+        const QByteArray body=fixture.readAll();
+
+        NavigationRoute route;QString error;
+        QVERIFY2(NavigationService::parseRouteResponse(body,&route,&error),qPrintable(error));
+        QCOMPARE(route.totalDistanceMeters,10430);
+        QCOMPARE(route.totalDurationSeconds,1580);
+        QCOMPARE(route.steps.size(),3);
+        QCOMPARE(route.steps.first().roadName,QStringLiteral("望京街"));
+        QCOMPARE(route.steps.first().distanceMeters,420);
+        QVERIFY(route.steps.first().polyline.contains(QLatin1String("116.481028,39.989643")));
+        QVERIFY(!route.steps.last().instruction.isEmpty());
+
+        // API error payload must be classified, not parsed as a route.
+        const QByteArray apiError=QByteArrayLiteral("{\"status\":\"0\",\"info\":\"INVALID_USER_KEY\",\"infocode\":\"20001\"}");
+        QVERIFY(!NavigationService::parseRouteResponse(apiError,&route,&error));
+        QVERIFY(error.contains(QLatin1String("20001")));
+
+        // Valid status but no paths => no route.
+        const QByteArray noRoute=QByteArrayLiteral("{\"status\":\"1\",\"info\":\"OK\",\"infocode\":\"10000\",\"route\":{\"paths\":[]}}");
+        QVERIFY(!NavigationService::parseRouteResponse(noRoute,&route,&error));
+
+        // Garbage input => parse error, no crash.
+        QVERIFY(!NavigationService::parseRouteResponse(QByteArrayLiteral("not json"),&route,&error));
+
+        // Real data must flow into the data center and the demo card falls back cleanly.
+        VehicleDataCenter *m=w->model();
+        m->routeDistanceMeters=route.totalDistanceMeters;m->routeDurationSeconds=route.totalDurationSeconds;
+        m->routeNextRoad=route.steps.first().roadName;m->routeNextInstruction=route.steps.first().instruction;
+        m->routeNextStepMeters=route.steps.first().distanceMeters;
+        QVERIFY(m->hasRealRoute());QCOMPARE(m->routeNextStepMeters,420);m->notify();
+        m->routeDistanceMeters=0;m->routeDurationSeconds=0;m->routeNextStepMeters=0;m->routeNextRoad.clear();m->routeNextInstruction.clear();
+        QVERIFY(!m->hasRealRoute());m->notify();
     }
     void cleanupTestCase(){delete w;}
 };

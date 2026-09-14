@@ -2,6 +2,24 @@
 
 仅记录实际完成的变更。未实现的功能放入 PRD 或阶段计划，不计作已完成。
 
+## [0.2.10-ui] - 2026-09-12
+
+### 新增
+
+- Linux 主程序启动时在后台初始化 `wlan0`：接口缺失时自动 `insmod /lib/modules/wlan.ko`，复用板端 `wpa_supplicant`、等待 WPA 关联并通过 `udhcpc` 获取 IPv4 地址；已联网时不会重复断开连接。
+- 增加 `/Kd1234/config/wifi.ini` 可选配置和 `/Kd1234/config/wifi_startup.log` 启动日志；热点凭据继续保存在权限受限的 `wpa_supplicant.conf`，不写入程序源码。
+- WLAN 后台线程结束后立即触发一次 NTP 校时检查，热点联通后顶部北京时间尽快切换为校准时间。
+- 新增 `NavigationService`：信号驱动的高德驾车路径规划客户端，读取 `/Kd1234/config/navigation.ini`（模板 `config/navigation.ini.example`），异步请求 v5 接口（`show_fields=cost,tmcs,navi,roads`），解析总距离、总时长、分段转向指令、道路名与 polyline；带显式状态机（请求中 / 就绪 / 失败）与错误分类（配置 / 网络 / SSL / API / 解析 / 无路线 / 超时）。
+- 路线成功后自动更新首页导航卡片：真实距离、预计时长与到达时间替换演示文案；失败时保留离线示意内容，并在 30 秒后自动重试（最多 5 次，等待 WLAN 就绪）。
+- 同一对起终点 10 分钟内命中缓存不重复请求，控制个人 Key 每日约 100 次的配额。
+- 主工程启用 QtNetwork（板上已有 `libQt5Network.so.5.4.1`，无需重编 Qt）；板端按请求加载 `/etc/ssl/certs/ca-certificates.crt`。
+- 增加 `tests/fixtures/route_v5_sample.json` 解析测试：覆盖正常解析、API 错误码分类、无路线与非法 JSON 输入。
+
+### 修改
+
+- `wpa_supplicant.conf` 默认路径不可读时自动回退 `/etc/wpa_supplicant.conf`，与板端已验证的配置位置一致。
+- README 汇总"开发板凭据存放位置"表；`.gitignore` 屏蔽 `config/navigation.ini`、`config/wifi.ini`、`config/wpa_supplicant.conf` 与 `config/camera_calibration.ini`，防止真实凭据误提交。
+
 ## [0.2.9-ui] - 2026-09-11
 
 ### 修改

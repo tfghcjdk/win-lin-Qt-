@@ -6,6 +6,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QProcess>
+#include <QSettings>
 #include <QTextStream>
 #include <QThread>
 #include <QTime>
@@ -33,6 +35,7 @@ const char kDefaultConfigDirectory[] = "/Kd1234/config";
 const char kStateName[] = "rtc_time_sync.state";
 const char kLegacyMarkerName[] = ".rtc_time_synced_once";
 const char kLogName[] = "time_sync.log";
+const char kWifiLogName[] = "wifi_startup.log";
 const qint64 kSyncIntervalSeconds=6*60*60;
 const int kRetryCheckMilliseconds=10*60*1000;
 bool syncRunning=false;
@@ -45,6 +48,7 @@ QString configDirectory() {
 QString statePath() { return QDir(configDirectory()).filePath(QString::fromLatin1(kStateName)); }
 QString legacyMarkerPath() { return QDir(configDirectory()).filePath(QString::fromLatin1(kLegacyMarkerName)); }
 QString logPath() { return QDir(configDirectory()).filePath(QString::fromLatin1(kLogName)); }
+QString wifiLogPath() { return QDir(configDirectory()).filePath(QString::fromLatin1(kWifiLogName)); }
 
 void appendLog(const QString &message) {
     QFile file(logPath());
@@ -52,6 +56,149 @@ void appendLog(const QString &message) {
     QTextStream out(&file);
     out<<QDateTime::currentDateTimeUtc().toString(QStringLiteral("yyyy-MM-ddTHH:mm:ssZ"))<<" "<<message<<"\n";
 }
+
+void appendWifiLog(const QString &message) {
+    QFile file(wifiLogPath());
+    if(!file.open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text))return;
+    QTextStream out(&file);
+    out<<QDateTime::currentDateTimeUtc().toString(QStringLiteral("yyyy-MM-ddTHH:mm:ssZ"))<<" "<<message<<"\n";
+}
+
+struct CommandResult {
+    int exitCode;
+    QByteArray output;
+    bool started;
+};
+
+CommandResult runCommand(const QString &program,const QStringList &arguments,int timeoutMilliseconds) {
+    QProcess process;
+    process.setProcessChannelMode(QProcess::MergedChannels);
+    process.start(program,arguments);
+    if(!process.waitForStarted(3000))return CommandResult{-1,process.errorString().toLocal8Bit(),false};
+    if(!process.waitForFinished(timeoutMilliseconds)) {
+        process.kill();
+        process.waitForFinished(1000);
+        return CommandResult{-1,process.readAll(),true};
+    }
+    return CommandResult{process.exitCode(),process.readAll(),true};
+}
+
+QString compactOutput(const QByteArray &value) {
+    QString text=QString::fromLocal8Bit(value).trimmed();
+    text.replace(QLatin1Char('\n'),QLatin1Char(' '));
+    text.replace(QLatin1Char('\r'),QLatin1Char(' '));
+    return text.left(300);
+}
+
+bool hasIpv4Address(const QString &ifconfig,const QString &interfaceName) {
+    const CommandResult result=runCommand(ifconfig,QStringList()<<interfaceName,5000);
+    return result.started&&result.exitCode==0&&
+           (result.output.contains("inet addr:")||result.output.contains("inet "));
+}
+
+class WifiStartupThread : public QThread {
+public:
+    explicit WifiStartupThread(QObject *parent):QThread(parent){}
+protected:
+    void run() {
+        QSettings settings(QDir(configDirectory()).filePath(QStringLiteral("wifi.ini")),QSettings::IniFormat);
+        settings.beginGroup(QStringLiteral("wifi"));
+        const bool enabled=settings.value(QStringLiteral("enabled"),true).toBool();
+        const QString interfaceName=settings.value(QStringLiteral("interface"),QStringLiteral("wlan0")).toString().trimmed();
+        const QString driver=settings.value(QStringLiteral("driver"),QStringLiteral("nl80211")).toString().trimmed();
+        const QString driverModule=settings.value(QStringLiteral("driver_module"),QStringLiteral("/lib/modules/wlan.ko")).toString().trimmed();
+        const QString supplicant=settings.value(QStringLiteral("supplicant"),QStringLiteral("/Kd1234/wifi_new/wpa_supplicant")).toString().trimmed();
+        const QString cli=settings.value(QStringLiteral("cli"),QStringLiteral("/Kd1234/wifi_new/wpa_cli")).toString().trimmed();
+        QString supplicantConfig=settings.value(QStringLiteral("supplicant_config"),QStringLiteral("/Kd1234/wpa_supplicant.conf")).toString().trimmed();
+        const QString controlDirectory=settings.value(QStringLiteral("control_directory"),QStringLiteral("/var/run/wpa_supplicant")).toString().trimmed();
+        const QString ifconfig=settings.value(QStringLiteral("ifconfig"),QStringLiteral("ifconfig")).toString().trimmed();
+        const QString dhcp=settings.value(QStringLiteral("dhcp"),QStringLiteral("udhcpc")).toString().trimmed();
+        settings.endGroup();
+
+        if(!enabled){appendWifiLog(QStringLiteral("automatic WLAN startup disabled"));return;}
+        if(interfaceName.isEmpty()||driver.isEmpty()) {appendWifiLog(QStringLiteral("invalid WLAN interface or driver setting"));return;}
+        if(!QFileInfo(supplicant).isExecutable()) {appendWifiLog(QStringLiteral("wpa_supplicant is not executable: %1").arg(supplicant));return;}
+        if(!QFileInfo(cli).isExecutable()) {appendWifiLog(QStringLiteral("wpa_cli is not executable: %1").arg(cli));return;}
+        if(!QFileInfo(supplicantConfig).isReadable()) {
+            const QString fallback=QStringLiteral("/etc/wpa_supplicant.conf");
+            if(QFileInfo(fallback).isReadable()) {
+                appendWifiLog(QStringLiteral("WLAN configuration %1 not readable; using %2").arg(supplicantConfig,fallback));
+                supplicantConfig=fallback;
+            } else {
+                appendWifiLog(QStringLiteral("WLAN configuration is not readable: %1").arg(supplicantConfig));
+                return;
+            }
+        }
+
+        const QString sysInterfacePath=QStringLiteral("/sys/class/net/%1").arg(interfaceName);
+        if(!QFileInfo(sysInterfacePath).exists()&&!driverModule.isEmpty()) {
+            if(!QFileInfo(driverModule).isFile()) {
+                appendWifiLog(QStringLiteral("WLAN driver module is missing: %1").arg(driverModule));
+                return;
+            }
+            CommandResult module=runCommand(QStringLiteral("/sbin/insmod"),QStringList()<<driverModule,10000);
+            if(!module.started||module.exitCode!=0)
+                module=runCommand(QStringLiteral("insmod"),QStringList()<<driverModule,10000);
+            if(!module.started||module.exitCode!=0) {
+                appendWifiLog(QStringLiteral("failed to load %1: %2").arg(driverModule,compactOutput(module.output)));
+                return;
+            }
+            for(int attempt=0;attempt<10&&!QFileInfo(sysInterfacePath).exists();++attempt)sleep(1);
+            if(!QFileInfo(sysInterfacePath).exists()) {
+                appendWifiLog(QStringLiteral("%1 loaded but %2 did not appear").arg(driverModule,interfaceName));
+                return;
+            }
+        }
+
+        QDir().mkpath(controlDirectory);
+        CommandResult result=runCommand(ifconfig,QStringList()<<interfaceName<<QStringLiteral("up"),5000);
+        if(!result.started||result.exitCode!=0) {
+            appendWifiLog(QStringLiteral("failed to bring %1 up: %2").arg(interfaceName,compactOutput(result.output)));
+            return;
+        }
+
+        const QStringList cliBase=QStringList()<<QStringLiteral("-p")<<controlDirectory<<QStringLiteral("-i")<<interfaceName;
+        result=runCommand(cli,cliBase+QStringList()<<QStringLiteral("ping"),5000);
+        if(result.output.contains("PONG")&&hasIpv4Address(ifconfig,interfaceName)) {
+            appendWifiLog(QStringLiteral("WLAN already ready on %1").arg(interfaceName));
+            return;
+        }
+        if(!result.output.contains("PONG")) {
+            const QStringList arguments=QStringList()<<QStringLiteral("-B")<<QStringLiteral("-D")<<driver
+                    <<QStringLiteral("-i")<<interfaceName<<QStringLiteral("-c")<<supplicantConfig
+                    <<QStringLiteral("-f")<<QStringLiteral("/tmp/wpa_supplicant.log");
+            result=runCommand(supplicant,arguments,10000);
+            if(!result.started||result.exitCode!=0) {
+                appendWifiLog(QStringLiteral("wpa_supplicant failed: %1").arg(compactOutput(result.output)));
+                return;
+            }
+        } else {
+            runCommand(cli,cliBase+QStringList()<<QStringLiteral("reconnect"),5000);
+        }
+
+        bool associated=false;
+        for(int attempt=0;attempt<30&&!associated;++attempt) {
+            result=runCommand(cli,cliBase+QStringList()<<QStringLiteral("status"),5000);
+            associated=result.output.contains("wpa_state=COMPLETED");
+            if(!associated)sleep(1);
+        }
+        if(!associated) {
+            appendWifiLog(QStringLiteral("%1 did not associate within 30 seconds; see /tmp/wpa_supplicant.log").arg(interfaceName));
+            return;
+        }
+
+        if(!hasIpv4Address(ifconfig,interfaceName)) {
+            result=runCommand(dhcp,QStringList()<<QStringLiteral("-i")<<interfaceName<<QStringLiteral("-n")
+                              <<QStringLiteral("-q")<<QStringLiteral("-t")<<QStringLiteral("5"),45000);
+            if(!result.started||result.exitCode!=0) {
+                appendWifiLog(QStringLiteral("DHCP failed on %1: %2").arg(interfaceName,compactOutput(result.output)));
+                return;
+            }
+        }
+        if(hasIpv4Address(ifconfig,interfaceName))appendWifiLog(QStringLiteral("WLAN ready on %1").arg(interfaceName));
+        else appendWifiLog(QStringLiteral("WLAN associated on %1 but no IPv4 address was assigned").arg(interfaceName));
+    }
+};
 
 bool readEpochFile(const QString &path,qint64 *epoch) {
     QFile file(path);
@@ -264,6 +411,19 @@ void startSynchronizationIfDue() {
 #endif
 }
 
+void SystemManager::initializeWifi() {
+#ifdef Q_OS_LINUX
+    if(!QFileInfo(configDirectory()).isDir())return;
+    WifiStartupThread *thread=new WifiStartupThread(QCoreApplication::instance());
+    QObject::connect(thread,&QThread::finished,thread,&QObject::deleteLater);
+    // The WLAN startup thread finishes as soon as the link is ready (or fails);
+    // retry the periodic clock check at that point instead of waiting for the
+    // fixed retry window, so the header shows verified NTP time sooner.
+    QObject::connect(thread,&QThread::finished,thread,[](){startSynchronizationIfDue();});
+    thread->start();
+#endif
+}
+
 void SystemManager::initializeClock() {
 #ifdef Q_OS_LINUX
     if(!QFileInfo(configDirectory()).isDir())return;
@@ -275,5 +435,8 @@ void SystemManager::initializeClock() {
     QObject::connect(timer,&QTimer::timeout,[](){startSynchronizationIfDue();});
     timer->start();
     startSynchronizationIfDue();
+    // The first NTP attempt can precede WLAN association, so retry once after
+    // the background WLAN startup window instead of waiting ten minutes.
+    QTimer::singleShot(45000,[](){startSynchronizationIfDue();});
 #endif
 }

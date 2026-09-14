@@ -1,0 +1,40 @@
+; 高德导航配置文件（板端模板 / 仓库模板）
+;
+; 部署：
+;   1. 在高德开放平台控制台创建应用并申请 Key（Web 服务类型，无需 IP 白名单）
+;   2. 将本文件复制为 /Kd1234/config/navigation.ini（不要提交到仓库）
+;   3. 填写真实 web_service_key
+;   4. chmod 600 /Kd1234/config/navigation.ini
+;
+; 所有路径分隔符使用正斜杠；QSettings IniFormat 兼容 ';' 开头注释。
+
+[amap]
+; 高德 Web 服务 Key（必须）—— 不要 echo 到日志或截图
+web_service_key=在此粘贴你的高德Web服务Key
+
+; 定位方式：
+;   fixed       - 固定坐标模式，第一版推荐
+;   manual      - UI 输入起点和终点坐标
+;   keyword     - 输入地点名称（结合 输入提示API /v3/assistant/inputtips）
+;   phone       - 手机推送实时位置（待实现）
+location_mode=fixed
+
+; 经度,纬度（GCJ-02 火星坐标，高德官方坐标系）；origin 与 destination 同时启用
+origin=116.481028,39.989643
+destination=116.434446,39.908160
+
+; 驾车偏好：0 推荐 / 1 不走高速 / 2 不走收费 / 3 两者都避 / 4 高速优先 / 5 普通路优先
+strategy=0
+
+; v5 接口必填：哪些扩展字段要随响应返回（v3 接口请置空）
+; cost - 包含费用、时长；tmcs - 分段路况；navi - 详细导航指令；roads - 道路名
+show_fields=cost,tmcs,navi,roads
+
+; 是否使用 HTTPS：1 启用；0 退回到 HTTP（仅调试用，生产环境务必启用）
+use_https=1
+
+; 单次请求超时（毫秒）
+request_timeout_ms=8000
+
+; 路线缓存时间（秒）：同一对起终点在此窗口内不重复请求 API
+cache_ttl_seconds=600

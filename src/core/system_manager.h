@@ -6,6 +6,8 @@
 // system clock and RTC from verified NTP replies while networking is available.
 class SystemManager {
 public:
+    // Starts wlan0, wpa_supplicant and DHCP on the X6818 without blocking the UI.
+    static void initializeWifi();
     static void initializeClock();
 };
 

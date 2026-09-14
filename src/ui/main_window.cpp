@@ -168,10 +168,20 @@ QWidget *MainWindow::vehiclePage() {
 QWidget *MainWindow::navigationPage() {
     QWidget *page=new PageShell(QStringLiteral("导航"),QStringLiteral("探索前方的每一段旅程 · 地图与路线为离线示意，无实时定位"));page->setObjectName("navigationPage");
     NavigationCard *nav=new NavigationCard(state,page);nav->setGeometry(0,68,570,437);
-    info(page,QRect(582,68,330,240),QStringLiteral("前往 · 科技园"),QStringLiteral("下一路口右转进入科技大道<br/><br/>剩余距离 &nbsp; 12 公里<br/><br/>预计用时 &nbsp; 28 分钟<br/><br/>限速参考 &nbsp; 60 km/h"));
+    QLabel *detail=info(page,QRect(582,68,330,240),QStringLiteral("前往 · 科技园"),QStringLiteral("下一路口右转进入科技大道<br/><br/>剩余距离 &nbsp; 12 公里<br/><br/>预计用时 &nbsp; 28 分钟<br/><br/>限速参考 &nbsp; 60 km/h"));
     QLabel *status=info(page,QRect(582,320,330,114),QStringLiteral("路线状态"),QStringLiteral("导航路线进行中"));
     QPushButton *toggle=action(page,"toggleRoute",QStringLiteral("结束导航"),QRect(599,449,296,44));
-    auto refresh=[this,toggle,status](){toggle->setText(state->routeActive?QStringLiteral("结束导航"):QStringLiteral("开始导航"));status->setText(state->routeActive?QStringLiteral("路线进行中\n原型路径 · 无联网地图服务"):QStringLiteral("路线已结束\n点击下方按钮重新开始"));};
+    auto refresh=[this,toggle,status,detail](){
+        toggle->setText(state->routeActive?QStringLiteral("结束导航"):QStringLiteral("开始导航"));
+        if(state->routeActive&&state->hasRealRoute()){
+            const QString next=state->routeNextInstruction.isEmpty()?(state->routeNextRoad.isEmpty()?QStringLiteral("沿当前道路行驶"):QStringLiteral("进入")+state->routeNextRoad):state->routeNextInstruction;
+            detail->setText(QStringLiteral("%1<br/><br/>本次转向距离 &nbsp; %2 米<br/><br/>全程 &nbsp; %3 公里<br/><br/>预计用时 &nbsp; %4 分钟")
+                .arg(next,QString::number(state->routeNextStepMeters),QString::number(state->routeDistanceMeters/1000.0,'f',1),QString::number(state->routeDurationSeconds/60)));
+            status->setText(QStringLiteral("路线进行中\n高德实时路线 · 固定起终点模式"));
+        } else {
+            status->setText(state->routeActive?QStringLiteral("路线进行中\n原型路径 · 无联网地图服务"):QStringLiteral("路线已结束\n点击下方按钮重新开始"));
+        }
+    };
     connect(toggle,&QPushButton::clicked,this,[this](){state->routeActive=!state->routeActive;state->notify();});connect(state,&VehicleDataCenter::changed,page,refresh);refresh();return page;
 }
 QWidget *MainWindow::climatePage() {

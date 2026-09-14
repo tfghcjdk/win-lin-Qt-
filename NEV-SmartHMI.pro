@@ -1,4 +1,4 @@
-QT += core gui widgets
+QT += core gui widgets network
 TEMPLATE = app
 TARGET = NEV-SmartHMI
 CONFIG += c++11
@@ -8,4 +8,4 @@ include(hmi_sources.pri)
 SOURCES += src/main.cpp
 FORMS += src/ui/main_window.ui
 RESOURCES += assets/hmi.qrc
-DISTFILES += README.md PRD.md TECH_SPEC.md CHANGELOG.md assets/qss/dark_theme.qss config/camera_calibration.ini.example
+DISTFILES += README.md PRD.md TECH_SPEC.md CHANGELOG.md assets/qss/dark_theme.qss config/camera_calibration.ini.example config/wifi.ini.example config/navigation.ini.example doc/WIFI_STARTUP.md

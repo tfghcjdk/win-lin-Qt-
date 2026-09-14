@@ -18,7 +18,19 @@
 - **设置**：版本和运行环境、演示数据断连、低胎压场景及退出操作。
 - **倒车影像**：进入页面时自动打开 Linux `/dev/video9`，优先请求 1280 × 720 / 30 FPS；画面水平镜像，以 Qt 平滑算法按比例显示并叠加带深色描边的绿、黄、红平滑曲线辅助线。Linux 使用 OpenCV 3.4.16 单目地面测距，80 cm 内触发后方障碍物警告；返回或按 Esc 自动停止并释放设备。
 
-车辆数值、地图和媒体计时仍为模拟数据。Linux 已接入 V4L2 摄像头和定期 NTP / RTC 校时；尚未接入 CAN / 串口、实时地图和音频输出。单目测距必须安装有效的 `/etc/nev-smarthmi/camera_calibration.ini` 后才启用；温度范围、胎压场景、测距阈值和辅助线均未按实车标定。RTC 使用方法和断电保持条件见 [时间同步与 RTC 部署说明](doc/TIME_SYNC_RTC.md)。
+车辆数值和媒体计时仍为模拟数据。Linux 已接入 V4L2 摄像头、WLAN 后台启动、定期 NTP / RTC 校时和高德驾车路径规划（`NavigationService`，固定起终点模式，读取 `/Kd1234/config/navigation.ini`；路线失败时自动回退离线示意内容并重试）；尚未接入 CAN / 串口、实时地图渲染（当前仅文字摘要与转向指令）、真实定位和音频输出。单目测距必须安装有效的 `/etc/nev-smarthmi/camera_calibration.ini` 后才启用；温度范围、胎压场景、测距阈值和辅助线均未按实车标定。WLAN 默认复用 `/Kd1234/wifi_new` 和 `/Kd1234/wpa_supplicant.conf`，详情见 [WLAN 自动启动说明](doc/WIFI_STARTUP.md)。RTC 使用方法和断电保持条件见 [时间同步与 RTC 部署说明](doc/TIME_SYNC_RTC.md)。
+
+## 开发板凭据存放位置
+
+下表说明运行时凭据和参数在开发板上的最终位置。仓库内只放模板文件，**真实凭据一律在板端手工填入**；`.gitignore` 已屏蔽下列文件避免误提交。
+
+| 内容 | 开发板位置 | 仓库模板 | 权限 |
+| --- | --- | --- | --- |
+| 高德导航 API Key | `/Kd1234/config/navigation.ini` | `config/navigation.ini.example` | `600` |
+| WiFi 名称和密码 | `/Kd1234/wpa_supplicant.conf`（不可读时回退 `/etc/wpa_supplicant.conf`） | — | `600` |
+| WLAN 启动参数 | `/Kd1234/config/wifi.ini`，可选 | `config/wifi.ini.example` | `600` |
+
+模板文件包含所有允许的键名和默认值说明，部署时复制到板端对应路径后改写真实值。`navigation.ini` 与 `wifi.ini` 仅保存非敏感参数；Wi-Fi 密码和高德 Web 服务 Key 分别存放在 `wpa_supplicant.conf` 与 `navigation.ini` 中并设置 `600`，不在程序源码或仓库里留底。详见 [WLAN 自动启动说明](doc/WIFI_STARTUP.md) 与 [构建与部署说明](doc/BUILD_AND_DEPLOY.md)。
 
 ## 设计与实现
 
@@ -39,6 +51,7 @@ Qt Designer 表单位于 `src/ui/main_window.ui`，已加入 `NEV-SmartHMI.pro` 
 | [UI_IMPLEMENTATION.md](doc/UI_IMPLEMENTATION.md) | 当前页面、状态模型、验证结果和限制 |
 | [MONOCULAR_DISTANCE.md](doc/MONOCULAR_DISTANCE.md) | OpenCV 3.4.16 板端依赖、标定配置、算法与验证限制 |
 | [TIME_SYNC_RTC.md](doc/TIME_SYNC_RTC.md) | 定期 NTP 校时、RTC 写入和离线时间验证 |
+| [WIFI_STARTUP.md](doc/WIFI_STARTUP.md) | 程序启动 WLAN、配置、日志与板端验证 |
 | [BUILD_AND_DEPLOY.md](doc/BUILD_AND_DEPLOY.md) | Windows 构建、运行、测试及 ARM 待办 |
 | [CHANGELOG.md](CHANGELOG.md) | 实际变更日志 |
 | [BUG_TRACKER.md](BUG_TRACKER.md) | 缺陷与修复记录 |

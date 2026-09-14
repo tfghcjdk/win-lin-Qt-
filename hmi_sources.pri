@@ -1,6 +1,7 @@
 INCLUDEPATH += $$PWD/src
 SOURCES += $$PWD/src/core/vehicle_data_center.cpp \
            $$PWD/src/core/system_manager.cpp \
+           $$PWD/src/core/navigation_service.cpp \
            $$PWD/src/hardware/camera_v4l2.cpp \
            $$PWD/src/hardware/monocular_distance.cpp \
            $$PWD/src/ui/main_window.cpp \
@@ -8,6 +9,7 @@ SOURCES += $$PWD/src/core/vehicle_data_center.cpp \
            $$PWD/src/ui/paint_helpers.cpp
 HEADERS += $$PWD/src/core/vehicle_data_center.h \
            $$PWD/src/core/system_manager.h \
+           $$PWD/src/core/navigation_service.h \
            $$PWD/src/hardware/camera_v4l2.h \
            $$PWD/src/hardware/monocular_distance.h \
            $$PWD/src/ui/main_window.h \

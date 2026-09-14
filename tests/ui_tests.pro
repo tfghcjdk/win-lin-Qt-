@@ -1,4 +1,4 @@
-QT += core gui widgets testlib
+QT += core gui widgets network testlib
 TEMPLATE = app
 TARGET = hmi-ui-tests
 CONFIG += c++11 testcase console

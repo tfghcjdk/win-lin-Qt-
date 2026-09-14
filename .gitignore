@@ -63,3 +63,9 @@ id_dsa
 *.pfx
 *.p12
 *.key
+
+# On-board runtime configs (contain API keys, Wi-Fi passwords, calibration data)
+config/navigation.ini
+config/wifi.ini
+config/wpa_supplicant.conf
+config/camera_calibration.ini

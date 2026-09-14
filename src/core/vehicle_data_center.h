@@ -13,6 +13,13 @@ public:
     bool ac, automatic, frontDefrost, rearDefrost, recirculation;
     bool playing, routeActive, dataAvailable, lowPressure;
     int position, track, volume, rearObstacleDistanceCm;
+    // Real AMap route (written by NavigationService; 0/empty keeps demo text).
+    int routeDistanceMeters;
+    int routeDurationSeconds;
+    int routeNextStepMeters;
+    QString routeNextInstruction;
+    QString routeNextRoad;
+    bool hasRealRoute() const { return routeDistanceMeters > 0; }
     QString trackTitle() const;
     QString artist() const;
     int duration() const;

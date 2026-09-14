@@ -1,0 +1,13 @@
+[wifi]
+enabled=true
+interface=wlan0
+driver=nl80211
+; /sys/class/net/<interface> 不存在时自动 insmod；留空可禁用自动加载
+driver_module=/lib/modules/wlan.ko
+supplicant=/Kd1234/wifi_new/wpa_supplicant
+cli=/Kd1234/wifi_new/wpa_cli
+; supplicant_config 不可读时自动回退 /etc/wpa_supplicant.conf
+supplicant_config=/Kd1234/wpa_supplicant.conf
+control_directory=/var/run/wpa_supplicant
+ifconfig=ifconfig
+dhcp=udhcpc

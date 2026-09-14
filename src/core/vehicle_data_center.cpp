@@ -3,7 +3,8 @@
 VehicleDataCenter::VehicleDataCenter(QObject *parent)
     : QObject(parent), temperature(24.0), ac(true), automatic(true),
       frontDefrost(false), rearDefrost(false), recirculation(false), playing(true),
-      routeActive(true), dataAvailable(true), lowPressure(false), position(137), track(0), volume(60), rearObstacleDistanceCm(-1) {}
+      routeActive(true), dataAvailable(true), lowPressure(false), position(137), track(0), volume(60), rearObstacleDistanceCm(-1),
+      routeDistanceMeters(0), routeDurationSeconds(0), routeNextStepMeters(0) {}
 QString VehicleDataCenter::trackTitle() const {
     const QString titles[] = {QStringLiteral("向着更远的远方"), QStringLiteral("沿途的风景"), QStringLiteral("城市之外")};
     return titles[track];
