@@ -21,7 +21,20 @@
 {"version":1,"type":"destination","name":"中关村广场","lat":39.983,"lng":116.3076}
 ```
 
-## 命令行编译 APK（Windows，无需 Android Studio）
+## 方式一：Android Studio（推荐，省事）
+
+1. 下载安装 Android Studio（https://developer.android.com/studio，约 1.1 GB，
+   安装时保持默认选项，会自动装 Android SDK 和 Platform-Tools）。
+2. 启动后 **Open** → 选择本目录（`android/`，即包含 `settings.gradle` 的文件夹），
+   弹窗选 **Trust**。
+3. 首次 Gradle Sync 会自动补齐 wrapper、按 `gradle-wrapper.properties`
+   从腾讯云镜像下载 Gradle 8.7，依赖走阿里云镜像（已配好），耐心等 5~15 分钟。
+4. 同步完成后菜单 **Build → Build App Bundle(s)/APK(s) → Build APK(s)**，
+   产物在 `app\build\outputs\apk\debug\app-debug.apk`。
+5. 安装：手机开开发者选项 + USB 调试后 `adb install`，或把 APK 发给手机直接安装
+   （允许"安装未知来源应用"）。
+
+## 方式二：命令行编译 APK（Windows，无需 Android Studio）
 
 1. **JDK 17**：安装 Temurin 17（https://adoptium.net），确认
    `java -version` 输出 17.x。
@@ -48,7 +61,10 @@
    ```
    或直接把 APK 拷到手机上点开安装（需允许"安装未知来源应用"）。
 
-> 也可以直接用 Android Studio 打开本目录，点 Run 即可，省去上面 1-3 步。
+> 也可以直接用 Android Studio 打开本目录，点 Run 即可，省去上面 1-3 步（见方式一）。
+
+国内网络提示：若 `sdkmanager` 或 Gradle 依赖下载极慢，可给 sdkmanager 加
+`--proxy` 参数，或改用 Android Studio 内置 SDK Manager 安装（走它自己的加速通道）。
 
 ## 使用流程
 
