@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QDateTime>
 #include "core/vehicle_data_center.h"
+class NavigationController;
 class MainWindow : public QWidget {
     Q_OBJECT
 public:
@@ -15,6 +16,9 @@ public:
     void setPage(int index);
     bool cameraIsOpen() const;
     static QString beijingClockText(const QDateTime &utcNow);
+    // Phone mode: the navigation page uses this for destination editing.
+    void setNavigationController(NavigationController *controller) { navController = controller; }
+    NavigationController *navigationController() const { return navController; }
 public slots:
     void showCamera();
 protected:
@@ -22,6 +26,7 @@ protected:
     void keyPressEvent(QKeyEvent *event);
 private:
     VehicleDataCenter *state;
+    NavigationController *navController = 0;
     QStackedWidget *stack;
     QWidget *cameraOverlay;
     QVector<QPushButton *> navButtons;

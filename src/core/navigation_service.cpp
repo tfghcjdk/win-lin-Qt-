@@ -257,6 +257,19 @@ bool NavigationService::parseRouteResponse(const QByteArray &json, NavigationRou
             // v5 names the per-step distance "step_distance" (v3 uses "distance").
             step.distanceMeters = intFromVariant(stepObject.value(QStringLiteral("step_distance")));
         step.polyline = stepObject.value(QStringLiteral("polyline")).toString();
+        if (step.polyline.isEmpty()) {
+            // v5 has no per-step "polyline"; the geometry lives in
+            // tmcs[].tmc_polyline (traffic segments) when show_fields=tmcs.
+            QStringList merged;
+            const QJsonArray tmcs = stepObject.value(QStringLiteral("tmcs")).toArray();
+            for (int t = 0; t < tmcs.size(); ++t) {
+                const QString segment = tmcs.at(t).toObject()
+                    .value(QStringLiteral("tmc_polyline")).toString();
+                if (!segment.isEmpty())
+                    merged << segment;
+            }
+            step.polyline = merged.join(QLatin1Char(';'));
+        }
         result.steps.append(step);
     }
 

@@ -2,6 +2,7 @@
 #include "hmi_cards.h"
 #include "paint_helpers.h"
 #include "hardware/camera_v4l2.h"
+#include "core/navigation_controller.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QTimer>
@@ -12,6 +13,12 @@
 #include <QLinearGradient>
 #include <QShowEvent>
 #include <QHideEvent>
+#include <QDialog>
+#include <QLineEdit>
+#include <QSettings>
+#include <QGridLayout>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
 using namespace Hmi;
 namespace {
 class NavButton : public QPushButton {
@@ -28,6 +35,58 @@ protected:
     }
 private:QString label,symbol;
 };
+// Numeric-keypad destination editor (board has no text input method, so the
+// destination is entered as "lng,lat" GCJ-02 coordinates).
+// Returns the entered text, or an empty string when cancelled.
+QString askDestination(QWidget *parent, const QString &current) {
+    QDialog dialog(parent);
+    dialog.setModal(true);
+    dialog.setFixedSize(420, 400);
+    dialog.setStyleSheet(QStringLiteral(
+        "QDialog{background:#0a1c2e;color:#dff1f8;}"
+        "QLineEdit{background:#071828;border:1px solid #2b617d;border-radius:4px;"
+        "padding:6px;font-size:16px;color:#dff1f8;}"
+        "QPushButton{background:#12324e;border:1px solid #2b617d;border-radius:6px;"
+        "font-size:18px;color:#dff1f8;min-height:44px;}"
+        "QPushButton:pressed{background:#087fca;}"
+        "QLabel{color:#8fb3c7;font-size:12px;}"));
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    QLabel *hint = new QLabel(QStringLiteral("输入目的地坐标（GCJ-02 经度,纬度）\n可用手机高德长按地图查看坐标"), &dialog);
+    QLineEdit *edit = new QLineEdit(current, &dialog);
+    edit->setPlaceholderText(QStringLiteral("例如 116.434446,39.908160"));
+    layout->addWidget(hint);
+    layout->addWidget(edit);
+    QGridLayout *grid = new QGridLayout();
+    const char *keys[12] = {"1","2","3","4","5","6","7","8","9",".","0",","};
+    for (int i = 0; i < 12; ++i) {
+        QPushButton *b = new QPushButton(QString::fromLatin1(keys[i]), &dialog);
+        QObject::connect(b, &QPushButton::clicked, edit, [edit, i, keys]() {
+            edit->insert(QString::fromLatin1(keys[i]));
+        });
+        grid->addWidget(b, i / 3, i % 3);
+    }
+    QPushButton *minus = new QPushButton(QStringLiteral("-"), &dialog);
+    QObject::connect(minus, &QPushButton::clicked, edit, [edit]() { edit->insert(QStringLiteral("-")); });
+    QPushButton *back = new QPushButton(QStringLiteral("⌫"), &dialog);
+    QObject::connect(back, &QPushButton::clicked, edit, [edit]() { edit->backspace(); });
+    QPushButton *clear = new QPushButton(QStringLiteral("清空"), &dialog);
+    QObject::connect(clear, &QPushButton::clicked, edit, &QLineEdit::clear);
+    grid->addWidget(minus, 4, 0);
+    grid->addWidget(back, 4, 1);
+    grid->addWidget(clear, 4, 2);
+    layout->addLayout(grid);
+    QHBoxLayout *actions = new QHBoxLayout();
+    QPushButton *cancel = new QPushButton(QStringLiteral("取消"), &dialog);
+    QPushButton *ok = new QPushButton(QStringLiteral("确定"), &dialog);
+    QObject::connect(cancel, &QPushButton::clicked, &dialog, &QDialog::reject);
+    QObject::connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
+    actions->addWidget(cancel);
+    actions->addWidget(ok);
+    layout->addLayout(actions);
+    if (dialog.exec() != QDialog::Accepted)
+        return QString();
+    return edit->text().trimmed();
+}
 class PageShell : public QWidget {
 public:
     PageShell(const QString &heading,const QString &caption,QWidget *parent=0):QWidget(parent),heading(heading),caption(caption){}
@@ -170,19 +229,51 @@ QWidget *MainWindow::navigationPage() {
     NavigationCard *nav=new NavigationCard(state,page);nav->setGeometry(0,68,570,437);
     QLabel *detail=info(page,QRect(582,68,330,240),QStringLiteral("前往 · 科技园"),QStringLiteral("下一路口右转进入科技大道<br/><br/>剩余距离 &nbsp; 12 公里<br/><br/>预计用时 &nbsp; 28 分钟<br/><br/>限速参考 &nbsp; 60 km/h"));
     QLabel *status=info(page,QRect(582,320,330,114),QStringLiteral("路线状态"),QStringLiteral("导航路线进行中"));
-    QPushButton *toggle=action(page,"toggleRoute",QStringLiteral("结束导航"),QRect(599,449,296,44));
+    QPushButton *toggle=action(page,"toggleRoute",QStringLiteral("结束导航"),QRect(599,449,143,44));
+    QPushButton *destButton=action(page,"setDestination",QStringLiteral("设置目的地"),QRect(752,449,143,44));
     auto refresh=[this,toggle,status,detail](){
         toggle->setText(state->routeActive?QStringLiteral("结束导航"):QStringLiteral("开始导航"));
+        if(state->routeActive&&state->routeArrived){
+            detail->setText(QStringLiteral("已到达目的地<br/><br/>本次导航结束<br/><br/>点击\"结束导航\"清除路线<br/><br/>或设置新的目的地重新开始"));
+            status->setText(QStringLiteral("已到达目的地\n导航完成"));
+            return;
+        }
         if(state->routeActive&&state->hasRealRoute()){
             const QString next=state->routeNextInstruction.isEmpty()?(state->routeNextRoad.isEmpty()?QStringLiteral("沿当前道路行驶"):QStringLiteral("进入")+state->routeNextRoad):state->routeNextInstruction;
-            detail->setText(QStringLiteral("%1<br/><br/>本次转向距离 &nbsp; %2 米<br/><br/>全程 &nbsp; %3 公里<br/><br/>预计用时 &nbsp; %4 分钟")
+            detail->setText(QStringLiteral("%1<br/><br/>本次转向距离 &nbsp; %2 米<br/><br/>全程/剩余 &nbsp; %3 公里<br/><br/>预计用时 &nbsp; %4 分钟")
                 .arg(next,QString::number(state->routeNextStepMeters),QString::number(state->routeDistanceMeters/1000.0,'f',1),QString::number(state->routeDurationSeconds/60)));
-            status->setText(QStringLiteral("路线进行中\n高德实时路线 · 固定起终点模式"));
+            if(navController){
+                status->setText(state->hasPositionFix
+                    ?QStringLiteral("路线进行中\n手机定位 · %1").arg(state->positionText())
+                    :QStringLiteral("等待手机定位\n请打开手机上的定位推送 App"));
+            } else {
+                status->setText(QStringLiteral("路线进行中\n高德实时路线 · 固定起终点模式"));
+            }
         } else {
             status->setText(state->routeActive?QStringLiteral("路线进行中\n原型路径 · 无联网地图服务"):QStringLiteral("路线已结束\n点击下方按钮重新开始"));
         }
     };
-    connect(toggle,&QPushButton::clicked,this,[this](){state->routeActive=!state->routeActive;state->notify();});connect(state,&VehicleDataCenter::changed,page,refresh);refresh();return page;
+    connect(toggle,&QPushButton::clicked,this,[this](){state->routeActive=!state->routeActive;if(!state->routeActive){if(navController)navController->clearRoute();state->routeArrived=false;}state->notify();});
+    connect(destButton,&QPushButton::clicked,this,[this](){
+        if(!navController){
+            QDialog hint(this);hint.setModal(true);hint.setFixedSize(360,140);
+            hint.setStyleSheet(QStringLiteral("QDialog{background:#0a1c2e;}QLabel{color:#dff1f8;font-size:14px;}QPushButton{background:#12324e;border:1px solid #2b617d;border-radius:6px;color:#dff1f8;min-height:36px;}"));
+            QVBoxLayout *l=new QVBoxLayout(&hint);
+            l->addWidget(new QLabel(QStringLiteral("当前是固定起终点模式。\n要使用 UI 设置目的地，请在 navigation.ini\n将 location_mode 改为 phone 并重启。"),&hint));
+            QPushButton *ok=new QPushButton(QStringLiteral("知道了"),&hint);
+            connect(ok,&QPushButton::clicked,&hint,&QDialog::accept);
+            l->addWidget(ok);hint.exec();return;
+        }
+        const QString entered=askDestination(this,navController->destination());
+        if(entered.isEmpty())return;
+        navController->setDestination(entered);
+#ifdef Q_OS_LINUX
+        QSettings ini(QStringLiteral("/Kd1234/config/navigation.ini"),QSettings::IniFormat);
+        ini.setValue(QStringLiteral("amap/destination"),entered);
+        ini.sync();
+#endif
+    });
+    connect(state,&VehicleDataCenter::changed,page,refresh);refresh();return page;
 }
 QWidget *MainWindow::climatePage() {
     QWidget *page=new PageShell(QStringLiteral("舒适座舱"),QStringLiteral("调节温度与模式，让每一次出发都恰到好处"));page->setObjectName("climatePage");

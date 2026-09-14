@@ -4,9 +4,23 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QTextStream>
+#include <QSettings>
 #include "core/system_manager.h"
 #include "core/navigation_service.h"
+#include "core/phone_location_receiver.h"
+#include "core/navigation_controller.h"
 #include "ui/main_window.h"
+#ifdef Q_OS_LINUX
+// QSettings IniFormat splits comma-containing values ("lng,lat") into a
+// string list on read; join them back into the original scalar.
+static QString iniScalar(const QSettings &ini, const QString &key, const QString &fallback = QString()) {
+    const QVariant value = ini.value(key, fallback);
+    const QStringList parts = value.toStringList();
+    if (parts.size() > 1)
+        return parts.join(QStringLiteral(",")).trimmed();
+    return value.toString().trimmed();
+}
+#endif
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("NEV-SmartHMI"));
@@ -40,6 +54,52 @@ int main(int argc, char *argv[]) {
                             << QStringLiteral(" ") << line << QStringLiteral("\n");
         }
     };
+
+    // location_mode: fixed (ini origin/destination) or phone (UDP fixes).
+    QSettings navIni(QStringLiteral("/Kd1234/config/navigation.ini"), QSettings::IniFormat);
+    const QString locationMode = iniScalar(navIni, QStringLiteral("amap/location_mode"),
+                                           QStringLiteral("fixed"));
+
+    if (locationMode == QStringLiteral("phone")) {
+        // Phone pushes WGS-84 fixes over UDP; controller converts to GCJ-02,
+        // requests/advances the route and writes progress into the model.
+        PhoneLocationReceiver *receiver = new PhoneLocationReceiver(&app);
+        NavigationController *controller =
+            new NavigationController(navigation, window.model(), &app);
+        const QString destination = iniScalar(navIni, QStringLiteral("amap/destination"));
+        controller->setDestination(destination);
+        receiver->setMaxAccuracyMeters(
+            navIni.value(QStringLiteral("phone_location/max_accuracy_m"), 50).toFloat());
+        receiver->setStaleTimeoutMs(
+            navIni.value(QStringLiteral("phone_location/stale_ms"), 5000).toInt());
+        controller->setDeviationThresholdMeters(
+            navIni.value(QStringLiteral("route/deviation_threshold_m"), 60).toDouble());
+        controller->setDeviationSamples(
+            navIni.value(QStringLiteral("route/deviation_samples"), 5).toInt());
+        controller->setRerouteCooldownSeconds(
+            navIni.value(QStringLiteral("route/reroute_cooldown_s"), 30).toInt());
+        controller->setArrivalRadiusMeters(
+            navIni.value(QStringLiteral("route/arrival_radius_m"), 30).toDouble());
+
+        QObject::connect(receiver, &PhoneLocationReceiver::fixReceived,
+                         controller, &NavigationController::onPhoneFix);
+        QObject::connect(receiver, &PhoneLocationReceiver::fixLost,
+                         controller, &NavigationController::onPhoneFixLost);
+        QObject::connect(controller, &NavigationController::logLine, &app, navLog);
+        QObject::connect(receiver, &PhoneLocationReceiver::datagramRejected, &app,
+                         [navLog](const QString &reason) {
+            navLog(QStringLiteral("phone datagram rejected: %1").arg(reason));
+        });
+        QObject::connect(receiver, &PhoneLocationReceiver::receiverError, &app,
+                         [navLog](const QString &message) {
+            navLog(QStringLiteral("phone receiver error: %1").arg(message));
+        });
+
+        const quint16 port = quint16(navIni.value(QStringLiteral("phone_location/port"), 45454).toUInt());
+        if (receiver->start(port))
+            navLog(QStringLiteral("phone mode: listening UDP :%1, destination=%2").arg(port).arg(destination));
+        window.setNavigationController(controller);
+    } else {
     QObject::connect(navigation, &NavigationService::routeReady, &window, [&window, navLog](const NavigationRoute &route) {
         VehicleDataCenter *model = window.model();
         model->routeDistanceMeters = route.totalDistanceMeters;
@@ -70,6 +130,7 @@ int main(int argc, char *argv[]) {
     QObject::connect(navigationRetry, &QTimer::timeout, navigation, &NavigationService::requestConfiguredRoute);
     navLog(QStringLiteral("startup requestConfiguredRoute"));
     navigation->requestConfiguredRoute();
+    }
 #endif
     return app.exec();
 }

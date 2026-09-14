@@ -9,6 +9,8 @@
 #include "ui/main_window.h"
 #include "ui/hmi_cards.h"
 #include "core/navigation_service.h"
+#include "core/coordinate_transform.h"
+#include "core/phone_location_receiver.h"
 #include "hardware/camera_v4l2.h"
 #include "hardware/monocular_distance.h"
 #include <cmath>
@@ -129,6 +131,22 @@ private slots:
         // Garbage input => parse error, no crash.
         QVERIFY(!NavigationService::parseRouteResponse(QByteArrayLiteral("not json"),&route,&error));
 
+        // v5 has no per-step "polyline"; geometry comes from tmcs[].tmc_polyline.
+        const QByteArray v5Tmcs=QByteArrayLiteral(
+            "{\"status\":\"1\",\"info\":\"OK\",\"infocode\":\"10000\",\"route\":{\"paths\":[{"
+            "\"distance\":\"500\",\"cost\":{\"duration\":\"120\"},\"steps\":[{"
+            "\"instruction\":\"turn right onto main road\",\"step_distance\":\"43\",\"tmcs\":["
+            "{\"tmc_polyline\":\"116.48,39.98;116.47,39.98\",\"tmc_status\":\"ok\",\"tmc_distance\":\"43\"}]},{"
+            "\"instruction\":\"turn left\",\"road_name\":\"Furong St\",\"step_distance\":\"457\",\"tmcs\":["
+            "{\"tmc_polyline\":\"116.47,39.98;116.46,39.97\",\"tmc_status\":\"ok\",\"tmc_distance\":\"457\"}]}"
+            "]}]}}");
+        QVERIFY2(NavigationService::parseRouteResponse(v5Tmcs,&route,&error),qPrintable(error));
+        QCOMPARE(route.totalDurationSeconds,120);
+        QVERIFY(route.steps.first().polyline.contains(QLatin1String("116.48,39.98")));
+        QVERIFY(route.steps.first().polyline.contains(QLatin1String("116.47,39.98")));
+        QVERIFY(route.steps.last().polyline.contains(QLatin1String("116.46,39.97")));
+        QCOMPARE(route.steps.last().roadName,QStringLiteral("Furong St"));
+
         // Real data must flow into the data center and the demo card falls back cleanly.
         VehicleDataCenter *m=w->model();
         m->routeDistanceMeters=route.totalDistanceMeters;m->routeDurationSeconds=route.totalDurationSeconds;
@@ -137,6 +155,49 @@ private slots:
         QVERIFY(m->hasRealRoute());QCOMPARE(m->routeNextStepMeters,420);m->notify();
         m->routeDistanceMeters=0;m->routeDurationSeconds=0;m->routeNextStepMeters=0;m->routeNextRoad.clear();m->routeNextInstruction.clear();
         QVERIFY(!m->hasRealRoute());m->notify();
+    }
+    void coordinateTransformKnownVectors() {
+        using CoordinateTransform::wgs84ToGcj02;
+        using CoordinateTransform::outOfChina;
+        // Published reference: Beijing (WGS-84) -> GCJ-02 offset ~+0.0060/+0.0065.
+        const CoordinateTransform::LatLng gcj=wgs84ToGcj02(39.904200,116.407400);
+        QVERIFY(gcj.lat>39.904200&&gcj.lat<39.912);
+        QVERIFY(gcj.lng>116.407400&&gcj.lng<116.416);
+        // Typical offsets are 300-700 m.
+        const double offset=CoordinateTransform::distanceMeters(39.904200,116.407400,gcj.lat,gcj.lng);
+        QVERIFY(offset>200&&offset<900);
+        // Outside China the coordinate passes through unchanged.
+        QVERIFY(outOfChina(35.0,140.0));
+        const CoordinateTransform::LatLng same=wgs84ToGcj02(35.0,140.0);
+        QCOMPARE(same.lat,35.0);QCOMPARE(same.lng,140.0);
+        // Haversine sanity: 1 deg lat ~ 111 km.
+        const double km=CoordinateTransform::distanceMeters(30,116,31,116);
+        QVERIFY(km>108000&&km<114000);
+    }
+    void phoneFixValidation() {
+        PhoneFix fix;QString reason;
+        const QByteArray good=QByteArrayLiteral(
+            "{\"version\":1,\"seq\":7,\"time\":1757822400000,\"lat\":39.989643,\"lng\":116.481028,"
+            "\"accuracy\":12.5,\"speed\":3.2,\"bearing\":91.0}");
+        QVERIFY2(PhoneLocationReceiver::validateDatagram(good,6,1000,50,&fix,&reason),qPrintable(reason));
+        QCOMPARE(fix.seq,qint64(7));QCOMPARE(fix.lat,39.989643);QCOMPARE(fix.accuracyM,12.5f);
+        // seq must strictly increase.
+        QVERIFY(!PhoneLocationReceiver::validateDatagram(good,7,1001,50,&fix,&reason));QCOMPARE(reason,QStringLiteral("seq"));
+        // accuracy gate.
+        const QByteArray coarse=QByteArrayLiteral(
+            "{\"version\":1,\"seq\":8,\"lat\":39.98,\"lng\":116.48,\"accuracy\":80}");
+        QVERIFY(!PhoneLocationReceiver::validateDatagram(coarse,7,1002,50,&fix,&reason));QCOMPARE(reason,QStringLiteral("accuracy"));
+        // missing accuracy field.
+        const QByteArray noAcc=QByteArrayLiteral("{\"version\":1,\"seq\":8,\"lat\":39.98,\"lng\":116.48}");
+        QVERIFY(!PhoneLocationReceiver::validateDatagram(noAcc,7,1003,50,&fix,&reason));
+        // range checks.
+        const QByteArray badLat=QByteArrayLiteral("{\"version\":1,\"seq\":8,\"lat\":95,\"lng\":116.48,\"accuracy\":5}");
+        QVERIFY(!PhoneLocationReceiver::validateDatagram(badLat,7,1004,50,&fix,&reason));QCOMPARE(reason,QStringLiteral("range"));
+        const QByteArray nullIsland=QByteArrayLiteral("{\"version\":1,\"seq\":8,\"lat\":0,\"lng\":0,\"accuracy\":5}");
+        QVERIFY(!PhoneLocationReceiver::validateDatagram(nullIsland,7,1005,50,&fix,&reason));QCOMPARE(reason,QStringLiteral("range"));
+        // version / garbage.
+        QVERIFY(!PhoneLocationReceiver::validateDatagram(QByteArrayLiteral("{\"version\":2}"),7,1006,50,&fix,&reason));
+        QVERIFY(!PhoneLocationReceiver::validateDatagram(QByteArrayLiteral("hello"),7,1007,50,&fix,&reason));
     }
     void cleanupTestCase(){delete w;}
 };

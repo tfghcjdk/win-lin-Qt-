@@ -13,13 +13,16 @@
 web_service_key=在此粘贴你的高德Web服务Key
 
 ; 定位方式：
-;   fixed       - 固定坐标模式，第一版推荐
-;   manual      - UI 输入起点和终点坐标
-;   keyword     - 输入地点名称（结合 输入提示API /v3/assistant/inputtips）
-;   phone       - 手机推送实时位置（待实现）
+;   fixed       - 固定坐标模式，origin/destination 都写在本文件
+;   phone       - 手机 App 通过 UDP 推送实时位置作为起点（见 [phone_location]）
+;   manual      - UI 输入起点和终点坐标（预留）
+;   keyword     - 输入地点名称（预留，需中文输入法）
 location_mode=fixed
 
-; 经度,纬度（GCJ-02 火星坐标，高德官方坐标系）；origin 与 destination 同时启用
+; 经度,纬度（GCJ-02 火星坐标，高德官方坐标系）
+; fixed 模式：origin 与 destination 都生效
+; phone 模式：origin 忽略（来自手机实时定位），destination 为导航终点，
+;             也可以在 UI 导航页"设置目的地"里修改（会回写本文件）
 origin=116.481028,39.989643
 destination=116.434446,39.908160
 
@@ -38,3 +41,23 @@ request_timeout_ms=8000
 
 ; 路线缓存时间（秒）：同一对起终点在此窗口内不重复请求 API
 cache_ttl_seconds=600
+
+[phone_location]
+; 手机定位推送（location_mode=phone 时生效）
+; Android App 每秒向本端口发送一个 JSON 数据报（WGS-84 坐标）
+port=45454
+; 定位精度阈值（米）：精度差于此值的包直接丢弃
+max_accuracy_m=50
+; 超过此毫秒数没收到有效包视为定位丢失，UI 显示"等待手机定位"
+stale_ms=5000
+
+[route]
+; 动态导航参数（location_mode=phone 时生效）
+; 偏离路线超过此距离（米）开始计数
+deviation_threshold_m=60
+; 连续偏离满此次数才触发重规划（防抖）
+deviation_samples=5
+; 两次算路请求的最小间隔（秒），保护 API 配额
+reroute_cooldown_s=30
+; 距终点小于此距离（米）判定为到达
+arrival_radius_m=30

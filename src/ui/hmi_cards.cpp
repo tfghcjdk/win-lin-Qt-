@@ -5,6 +5,9 @@
 #include <QLinearGradient>
 #include <QIcon>
 #include <QDateTime>
+#include <QVector>
+#include <QPointF>
+#include <QStringList>
 using namespace Hmi;
 namespace {
 QIcon glyph(const QString &name) {
@@ -156,20 +159,42 @@ void NavigationCard::paintEvent(QPaintEvent *) {
     p.save();p.setClipRect(QRectF(8,35,232,146));p.fillRect(QRectF(8,35,232,146),QColor("#091b2d"));
     for(int i=0;i<7;++i){p.setPen(QPen(QColor("#163049"),7));p.drawLine(QPointF(-90+i*66,157),QPointF(45+i*32,48));p.setPen(QPen(QColor("#21425b"),1));p.drawLine(QPointF(-90+i*66,157),QPointF(45+i*32,48));}
     for(int i=0;i<5;++i){p.setPen(QPen(QColor("#163049"),7));p.drawLine(QPointF(0,75+i*24),QPointF(255,47+i*24));p.setPen(QPen(QColor("#23445d"),1));p.drawLine(QPointF(0,75+i*24),QPointF(255,47+i*24));}
-    if(m->routeActive){QPainterPath route;route.moveTo(122,152);route.lineTo(130,113);route.lineTo(123,76);route.lineTo(143,58);p.setPen(QPen(QColor("#075661"),10));p.drawPath(route);p.setPen(QPen(Green,4));p.drawPath(route);}
-    QPolygonF arrow;arrow<<QPointF(124,125)<<QPointF(114,143)<<QPointF(124,139)<<QPointF(134,143);p.setPen(QPen(Text,1));p.setBrush(Cyan);p.drawPolygon(arrow);
+    if(m->routeActive&&m->routePolyline.isEmpty()){QPainterPath route;route.moveTo(122,152);route.lineTo(130,113);route.lineTo(123,76);route.lineTo(143,58);p.setPen(QPen(QColor("#075661"),10));p.drawPath(route);p.setPen(QPen(Green,4));p.drawPath(route);}
+    if(m->routeActive&&!m->routePolyline.isEmpty()){
+        // Real route: fit the merged GCJ-02 polyline into the map area.
+        const QRectF mapArea(14,70,220,82);
+        const QStringList pairs=m->routePolyline.split(QLatin1Char(';'),QString::SkipEmptyParts);
+        QVector<QPointF> geo;geo.reserve(pairs.size());
+        double minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+        for(int i=0;i<pairs.size();++i){const QStringList ll=pairs.at(i).split(QLatin1Char(','));if(ll.size()!=2)continue;
+            const double x=ll.at(0).toDouble(),y=ll.at(1).toDouble();geo.append(QPointF(x,y));
+            if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
+        if(geo.size()>=2){
+            const double spanX=qMax(1e-6,maxX-minX),spanY=qMax(1e-6,maxY-minY);
+            const double s=qMin(mapArea.width()/spanX,mapArea.height()/spanY);
+            auto toPx=[&](const QPointF &g){return QPointF(mapArea.center().x()+(g.x()-(minX+maxX)/2)*s,
+                                                            mapArea.center().y()-(g.y()-(minY+maxY)/2)*s);};
+            QPainterPath route;route.moveTo(toPx(geo.first()));for(int i=1;i<geo.size();++i)route.lineTo(toPx(geo.at(i)));
+            p.setPen(QPen(QColor("#075661"),8));p.drawPath(route);p.setPen(QPen(Green,3));p.drawPath(route);
+            const QPointF end=toPx(geo.last());p.setPen(QPen(Text,1));p.setBrush(QColor("#f45363"));p.drawEllipse(end,4,4);
+            if(m->hasPositionFix){const QPointF pos=toPx(QPointF(m->vehicleLng,m->vehicleLat));
+                p.setPen(QPen(Qt::white,2));p.setBrush(Cyan);p.drawEllipse(pos,5,5);}
+        }
+    }
+    if(m->routePolyline.isEmpty()){QPolygonF arrow;arrow<<QPointF(124,125)<<QPointF(114,143)<<QPointF(124,139)<<QPointF(134,143);p.setPen(QPen(Text,1));p.setBrush(Cyan);p.drawPolygon(arrow);}
     p.setPen(QPen(QColor("#f45363"),3));p.setBrush(Qt::white);p.drawEllipse(QRectF(205,119,28,28));text(p,QRectF(205,119,28,28),"60",13,QColor("#102338"),true,Qt::AlignCenter);
     p.fillRect(QRectF(8,35,232,33),QColor(4,18,34,235));icon(p,"arrow",QRectF(16,40,24,24),Text);
     // Real AMap data replaces demo strings once NavigationService delivered a route.
-    const bool real=m->hasRealRoute()&&m->routeActive;
-    const QString ahead=real?(m->routeNextStepMeters>=1000?QStringLiteral("前方 %1 公里").arg(QString::number(m->routeNextStepMeters/1000.0,'f',1)):QStringLiteral("前方 %1 米").arg(m->routeNextStepMeters)):QStringLiteral("前方 800 米");
-    const QString road=real&&!m->routeNextRoad.isEmpty()?QStringLiteral("进入 ")+m->routeNextRoad:QStringLiteral("进入 科技大道");
+    const bool arrived=m->routeArrived&&m->routeActive;
+    const bool real=(m->hasRealRoute()||arrived)&&m->routeActive;
+    const QString ahead=arrived?QStringLiteral("已到达目的地"):(real?(m->routeNextStepMeters>=1000?QStringLiteral("前方 %1 公里").arg(QString::number(m->routeNextStepMeters/1000.0,'f',1)):QStringLiteral("前方 %1 米").arg(m->routeNextStepMeters)):QStringLiteral("前方 800 米"));
+    const QString road=arrived?QStringLiteral("导航结束，欢迎再次使用"):(real&&!m->routeNextRoad.isEmpty()?QStringLiteral("进入 ")+m->routeNextRoad:QStringLiteral("进入 科技大道"));
     text(p,QRectF(52,35,176,18),m->routeActive?ahead:QStringLiteral("暂无进行中的路线"),12,Text,true);
     text(p,QRectF(52,52,176,15),m->routeActive?road:QStringLiteral("点击查看路线详情"),10,Muted);
-    const QString summary=real?QStringLiteral("%1 公里 · %2 分钟").arg(QString::number(m->routeDistanceMeters/1000.0,'f',1)).arg(m->routeDurationSeconds/60):QStringLiteral("12 公里 · 28 分钟");
+    const QString summary=arrived?QStringLiteral("本次导航已完成"):(real?QStringLiteral("%1 公里 · %2 分钟").arg(QString::number(m->routeDistanceMeters/1000.0,'f',1)).arg(m->routeDurationSeconds/60):QStringLiteral("12 公里 · 28 分钟"));
     QString eta=QStringLiteral("--:--");
-    if(real){const QDateTime arrive=QDateTime::currentDateTimeUtc().addSecs(m->routeDurationSeconds+8*60*60);eta=arrive.toString(QStringLiteral("HH:mm"));}
-    else if(m->routeActive)eta=QStringLiteral("15:04");
+    if(real&&!arrived){const QDateTime arrive=QDateTime::currentDateTimeUtc().addSecs(m->routeDurationSeconds+8*60*60);eta=arrive.toString(QStringLiteral("HH:mm"));}
+    else if(m->routeActive&&!arrived)eta=QStringLiteral("15:04");
     p.fillRect(QRectF(8,155,232,27),QColor("#071828"));text(p,QRectF(15,157,103,22),m->routeActive?summary:QStringLiteral("导航已结束"),10);text(p,QRectF(118,157,117,22),m->routeActive?(real?QStringLiteral("预计到达 ")+eta:eta):"--:--",10,Muted,false,Qt::AlignRight|Qt::AlignVCenter);p.restore();
 }
 CameraCard::CameraCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSize(172,190),parent) {

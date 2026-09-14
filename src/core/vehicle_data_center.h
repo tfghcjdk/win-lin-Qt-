@@ -20,6 +20,13 @@ public:
     QString routeNextInstruction;
     QString routeNextRoad;
     bool hasRealRoute() const { return routeDistanceMeters > 0; }
+    // Live phone location (phone mode; GCJ-02 after conversion).
+    bool hasPositionFix;
+    bool routeArrived;                  // controller detected arrival
+    double vehicleLat, vehicleLng;      // GCJ-02
+    float vehicleAccuracyM;
+    QString routePolyline;              // "lng,lat;lng,lat;..." merged GCJ-02
+    QString positionText() const;
     QString trackTitle() const;
     QString artist() const;
     int duration() const;
