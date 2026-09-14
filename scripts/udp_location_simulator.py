@@ -9,6 +9,8 @@
 #     python udp_location_simulator.py --host 10.118.153.187 --duration 60
 #   Simulated drive origin -> destination (tests progress + arrival):
 #     python udp_location_simulator.py --host 10.118.153.187 --drive --duration 600
+#   Push a destination like the phone app does (GCJ-02 coords, single packet):
+#     python udp_location_simulator.py --host 10.118.153.187 --destination "望京SOHO,39.9958,116.4809"
 #
 # Coordinates below are WGS-84 such that after the board's GCJ-02
 # conversion they land on the configured fixed origin/destination
@@ -50,9 +52,24 @@ def main():
                     help="interpolate origin -> destination instead of a fixed point")
     ap.add_argument("--duration", type=float, default=60.0, help="seconds to send")
     ap.add_argument("--accuracy", type=float, default=10.0)
+    ap.add_argument("--destination", metavar="NAME,LAT,LNG",
+                    help="send a single destination packet (GCJ-02) and exit, "
+                         "e.g. --destination \"Wangjing SOHO,39.9958,116.4809\"")
     args = ap.parse_args()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    if args.destination:
+        parts = [p.strip() for p in args.destination.split(",")]
+        if len(parts) != 3:
+            ap.error("--destination expects NAME,LAT,LNG")
+        name, lat, lng = parts[0], float(parts[1]), float(parts[2])
+        pkt = {"version": 1, "type": "destination", "name": name,
+               "lat": lat, "lng": lng}
+        sock.sendto(json.dumps(pkt, ensure_ascii=False).encode("utf-8"),
+                    (args.host, args.port))
+        print("sent destination '%s' -> %.6f,%.6f (GCJ-02)" % (name, lat, lng))
+        return
     total_m = haversine_m(*ORIGIN_WGS, *DESTINATION_WGS)
     steps = max(1, int(args.duration))
     heading = bearing_deg(*ORIGIN_WGS, *DESTINATION_WGS)

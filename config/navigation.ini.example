@@ -44,7 +44,11 @@ cache_ttl_seconds=600
 
 [phone_location]
 ; 手机定位推送（location_mode=phone 时生效）
-; Android App 每秒向本端口发送一个 JSON 数据报（WGS-84 坐标）
+; Android App 每秒向本端口发送一个 JSON 数据报（WGS-84 坐标）：
+;   {"version":1,"seq":42,"time":1757822400000,"lat":39.98,"lng":116.47,
+;    "accuracy":12.5,"speed":3.2,"bearing":91.0}
+; 同一端口也接收目的地报文（GCJ-02 坐标，不要纠偏；name 可为空）：
+;   {"version":1,"type":"destination","name":"望京SOHO","lat":39.9958,"lng":116.4809}
 port=45454
 ; 定位精度阈值（米）：精度差于此值的包直接丢弃
 max_accuracy_m=50

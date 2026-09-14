@@ -51,7 +51,7 @@ QString askDestination(QWidget *parent, const QString &current) {
         "QPushButton:pressed{background:#087fca;}"
         "QLabel{color:#8fb3c7;font-size:12px;}"));
     QVBoxLayout *layout = new QVBoxLayout(&dialog);
-    QLabel *hint = new QLabel(QStringLiteral("输入目的地坐标（GCJ-02 经度,纬度）\n可用手机高德长按地图查看坐标"), &dialog);
+    QLabel *hint = new QLabel(QStringLiteral("输入目的地坐标（GCJ-02 经度,纬度）\n或在手机 App 里搜索中文地名直接发送"), &dialog);
     QLineEdit *edit = new QLineEdit(current, &dialog);
     edit->setPlaceholderText(QStringLiteral("例如 116.434446,39.908160"));
     layout->addWidget(hint);
@@ -243,9 +243,10 @@ QWidget *MainWindow::navigationPage() {
             detail->setText(QStringLiteral("%1<br/><br/>本次转向距离 &nbsp; %2 米<br/><br/>全程/剩余 &nbsp; %3 公里<br/><br/>预计用时 &nbsp; %4 分钟")
                 .arg(next,QString::number(state->routeNextStepMeters),QString::number(state->routeDistanceMeters/1000.0,'f',1),QString::number(state->routeDurationSeconds/60)));
             if(navController){
+                const QString destLine=state->routeDestinationName.isEmpty()?QString():(QStringLiteral("\n前往 ")+state->routeDestinationName);
                 status->setText(state->hasPositionFix
-                    ?QStringLiteral("路线进行中\n手机定位 · %1").arg(state->positionText())
-                    :QStringLiteral("等待手机定位\n请打开手机上的定位推送 App"));
+                    ?QStringLiteral("路线进行中\n手机定位 · %1").arg(state->positionText())+destLine
+                    :QStringLiteral("等待手机定位\n请打开手机上的定位推送 App")+destLine);
             } else {
                 status->setText(QStringLiteral("路线进行中\n高德实时路线 · 固定起终点模式"));
             }

@@ -63,8 +63,21 @@ void PhoneLocationReceiver::onReadyRead() {
         data.resize(int(m_socket->pendingDatagramSize()));
         m_socket->readDatagram(data.data(), data.size());
 
+        // Destination push (user-triggered, GCJ-02) takes a separate path.
+        QString destName, reason;
+        double destLat = 0, destLng = 0;
+        if (parseDestinationDatagram(data, &destName, &destLat, &destLng, &reason)) {
+            ++m_accepted;
+            emit destinationReceived(destName, destLat, destLng);
+            continue;
+        }
+        if (reason == QStringLiteral("destination-invalid")) {
+            ++m_rejected;
+            emit datagramRejected(reason);
+            continue;
+        }
+
         PhoneFix fix;
-        QString reason;
         if (!validateDatagram(data, m_lastFix.seq, rxMs, m_maxAccuracy, &fix, &reason)) {
             ++m_rejected;
             emit datagramRejected(reason);
@@ -83,6 +96,39 @@ void PhoneLocationReceiver::onStaleCheck() {
         m_stale = true;
         emit fixLost();
     }
+}
+
+bool PhoneLocationReceiver::parseDestinationDatagram(const QByteArray &data, QString *nameOut,
+                                                     double *latOut, double *lngOut,
+                                                     QString *reasonOut) {
+    QJsonParseError parseError;
+    const QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject()) {
+        if (reasonOut) *reasonOut = QStringLiteral("not-destination");
+        return false;
+    }
+    const QJsonObject o = doc.object();
+    if (o.value(QStringLiteral("type")).toString() != QStringLiteral("destination")) {
+        if (reasonOut) *reasonOut = QStringLiteral("not-destination");
+        return false;
+    }
+    // Explicit destination datagram but malformed: caller rejects it.
+    if (o.value(QStringLiteral("version")).toInt(-1) != 1) {
+        if (reasonOut) *reasonOut = QStringLiteral("destination-invalid");
+        return false;
+    }
+    const double lat = o.value(QStringLiteral("lat")).toDouble(0);
+    const double lng = o.value(QStringLiteral("lng")).toDouble(0);
+    if (lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0
+        || (lat == 0.0 && lng == 0.0)) {
+        if (reasonOut) *reasonOut = QStringLiteral("destination-invalid");
+        return false;
+    }
+    if (nameOut) *nameOut = o.value(QStringLiteral("name")).toString().trimmed();
+    if (latOut) *latOut = lat;
+    if (lngOut) *lngOut = lng;
+    if (reasonOut) reasonOut->clear();
+    return true;
 }
 
 bool PhoneLocationReceiver::validateDatagram(const QByteArray &data, qint64 lastAcceptedSeq,

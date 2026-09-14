@@ -199,6 +199,34 @@ private slots:
         QVERIFY(!PhoneLocationReceiver::validateDatagram(QByteArrayLiteral("{\"version\":2}"),7,1006,50,&fix,&reason));
         QVERIFY(!PhoneLocationReceiver::validateDatagram(QByteArrayLiteral("hello"),7,1007,50,&fix,&reason));
     }
+    void destinationDatagramParsing() {
+        // The phone app geocodes a Chinese place name and pushes GCJ-02.
+        QString name, reason;double lat=0,lng=0;
+        const QByteArray good=QString::fromUtf8(
+            "{\"version\":1,\"type\":\"destination\",\"name\":\"望京SOHO\","
+            "\"lat\":39.995800,\"lng\":116.480900}").toUtf8();
+        QVERIFY2(PhoneLocationReceiver::parseDestinationDatagram(good,&name,&lat,&lng,&reason),qPrintable(reason));
+        QCOMPARE(name,QStringLiteral("望京SOHO"));QCOMPARE(lat,39.995800);QCOMPARE(lng,116.480900);
+        // name is optional.
+        const QByteArray noName=QByteArrayLiteral(
+            "{\"version\":1,\"type\":\"destination\",\"lat\":39.9,\"lng\":116.4}");
+        QVERIFY(PhoneLocationReceiver::parseDestinationDatagram(noName,&name,&lat,&lng,&reason));
+        QVERIFY(name.isEmpty());
+        // fix datagrams are not destinations (fall through to fix validation).
+        const QByteArray fixPkt=QByteArrayLiteral(
+            "{\"version\":1,\"seq\":3,\"lat\":39.98,\"lng\":116.47,\"accuracy\":9}");
+        QVERIFY(!PhoneLocationReceiver::parseDestinationDatagram(fixPkt,&name,&lat,&lng,&reason));
+        QCOMPARE(reason,QStringLiteral("not-destination"));
+        // explicit but malformed destination => rejected, never navigated to.
+        const QByteArray badRange=QByteArrayLiteral(
+            "{\"version\":1,\"type\":\"destination\",\"lat\":95,\"lng\":116.4}");
+        QVERIFY(!PhoneLocationReceiver::parseDestinationDatagram(badRange,&name,&lat,&lng,&reason));
+        QCOMPARE(reason,QStringLiteral("destination-invalid"));
+        const QByteArray badVer=QByteArrayLiteral(
+            "{\"version\":2,\"type\":\"destination\",\"lat\":39.9,\"lng\":116.4}");
+        QVERIFY(!PhoneLocationReceiver::parseDestinationDatagram(badVer,&name,&lat,&lng,&reason));
+        QCOMPARE(reason,QStringLiteral("destination-invalid"));
+    }
     void cleanupTestCase(){delete w;}
 };
 QTEST_MAIN(UiTests)

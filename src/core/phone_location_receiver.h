@@ -29,6 +29,13 @@ struct PhoneFix {
 //    "lat":39.989643,"lng":116.481028,
 //    "accuracy":12.5,"speed":3.2,"bearing":91.0}
 //
+// A second datagram type sets the navigation destination from the phone app
+// (user searches a Chinese place name on the phone; the app geocodes it via
+// AMap and pushes the result). Coordinates are GCJ-02 already - the board
+// must NOT run the WGS-84 conversion on them:
+//   {"version":1,"type":"destination","name":"望京SOHO",
+//    "lat":39.995800,"lng":116.480900}
+//
 // Validation rules (from the agreed protocol):
 //   - version must be 1
 //   - |lat| <= 90, |lng| <= 180, and not exactly (0,0)
@@ -36,6 +43,7 @@ struct PhoneFix {
 //   - seq must be greater than the last accepted seq (reorder/duplicate drop)
 //   - a fix is stale if no valid packet arrives within staleTimeoutMs
 //     (default 5000); fixLost() is emitted once per stale transition
+//   - destination datagrams skip the seq/accuracy rules (user-triggered)
 //
 // Invalid datagrams are counted and reported via datagramRejected() for
 // diagnostics, never thrown. All parsing is exception-free (QJsonDocument).
@@ -63,9 +71,16 @@ public:
                                  qint64 rxTimeMs, float maxAccuracyMeters,
                                  PhoneFix *fixOut, QString *reasonOut);
 
+    // Pure destination-datagram parser (type="destination", GCJ-02 coords).
+    static bool parseDestinationDatagram(const QByteArray &data, QString *nameOut,
+                                         double *latOut, double *lngOut,
+                                         QString *reasonOut);
+
 signals:
     void fixReceived(const PhoneFix &fix);
     void fixLost();                                   // went stale
+    // Phone pushed a new destination (GCJ-02); name may be empty.
+    void destinationReceived(const QString &name, double gcjLat, double gcjLng);
     void datagramRejected(const QString &reason);     // invalid packet
     void receiverError(const QString &message);       // bind failure etc.
 

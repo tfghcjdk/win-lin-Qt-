@@ -26,6 +26,7 @@ public:
     double vehicleLat, vehicleLng;      // GCJ-02
     float vehicleAccuracyM;
     QString routePolyline;              // "lng,lat;lng,lat;..." merged GCJ-02
+    QString routeDestinationName;       // Chinese name pushed by the phone app
     QString positionText() const;
     QString trackTitle() const;
     QString artist() const;

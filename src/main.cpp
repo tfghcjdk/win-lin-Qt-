@@ -85,6 +85,19 @@ int main(int argc, char *argv[]) {
                          controller, &NavigationController::onPhoneFix);
         QObject::connect(receiver, &PhoneLocationReceiver::fixLost,
                          controller, &NavigationController::onPhoneFixLost);
+        // Phone pushed a geocoded destination (GCJ-02, Chinese name).
+        QObject::connect(receiver, &PhoneLocationReceiver::destinationReceived, &app,
+                         [controller, &window, navLog](const QString &name, double lat, double lng) {
+            const QString coord = QStringLiteral("%1,%2")
+                .arg(QString::number(lng, 'f', 6), QString::number(lat, 'f', 6));
+            window.model()->routeDestinationName = name;
+            controller->setDestination(coord);
+            QSettings ini(QStringLiteral("/Kd1234/config/navigation.ini"), QSettings::IniFormat);
+            ini.setValue(QStringLiteral("amap/destination"), coord);
+            ini.sync();
+            navLog(QStringLiteral("destination from phone: '%1' %2").arg(name, coord));
+            window.model()->notify();
+        });
         QObject::connect(controller, &NavigationController::logLine, &app, navLog);
         QObject::connect(receiver, &PhoneLocationReceiver::datagramRejected, &app,
                          [navLog](const QString &reason) {
