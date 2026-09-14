@@ -32,6 +32,8 @@
 
 模板文件包含所有允许的键名和默认值说明，部署时复制到板端对应路径后改写真实值。`navigation.ini` 与 `wifi.ini` 仅保存非敏感参数；Wi-Fi 密码和高德 Web 服务 Key 分别存放在 `wpa_supplicant.conf` 与 `navigation.ini` 中并设置 `600`，不在程序源码或仓库里留底。详见 [WLAN 自动启动说明](doc/WIFI_STARTUP.md) 与 [构建与部署说明](doc/BUILD_AND_DEPLOY.md)。
 
+手机定位推送 App（NEV-Locator，Android）：每秒向板端 UDP 45454 推送 GPS 定位，并支持中文地名设置目的地。工程与命令行编译指南见 [android/README.md](android/README.md)；无手机时的板端自测工具为 `scripts/udp_location_simulator.py`。
+
 ## 设计与实现
 
 依据用户提供的原型 JPG、根目录 [`.md`](.md) 和 `NEV_Smart_HMI_Project_Spec.pdf` 实现。采用 Qt Core / Gui / Widgets 与 C++11，不依赖 Qt Quick、新版控件或外部在线资源；API 兼容目标是 Qt 5.4.1。

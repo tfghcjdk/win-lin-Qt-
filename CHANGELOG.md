@@ -2,6 +2,24 @@
 
 仅记录实际完成的变更。未实现的功能放入 PRD 或阶段计划，不计作已完成。
 
+## [0.3.0] - 2026-09-14
+
+### 新增
+
+- 手机定位模式（`location_mode=phone`）：`PhoneLocationReceiver` 监听 UDP 45454，校验手机 App 每秒推送的 WGS-84 定位 JSON（版本 / 坐标范围 / 精度 ≤50 m / seq 严格递增 / 5 秒过期）；`NavigationController` 将定位投影到路线折线实时更新剩余距离、预计用时与当前转向，偏离路线 60 m 连续 5 个样本触发重规划（30 秒冷却），距终点 30 m 判定到达；`CoordinateTransform` 提供 WGS-84→GCJ-02 纠偏（含已知向量测试）。
+- 目的地 UDP 报文（`type=destination`）：手机 App 发送中文地名 + GCJ-02 坐标，板端收到后写入 `navigation.ini` 并自动重算路线，导航页状态区显示"前往 XX"；板端数字键盘输入坐标保留为备用通道。
+- 导航卡片与详情页：绘制真实路线折线与当前位置点，显示手机定位状态（坐标 / 精度 / 等待定位 / 已到达），到达后不再回退演示数据。
+- `scripts/udp_location_simulator.py`：无手机自测工具，支持固定点、`--drive` 模拟行驶（起点直线开到终点）与 `--destination` 目的地报文三种模式。
+- `android/`：NEV-Locator 手机端工程（Java / minSdk 26）——前台服务每秒推送 GPS 定位，中文地名经高德地理编码后推送目的地；附命令行 gradle 编译指南。
+
+### 修复
+
+- 高德 v5 响应步骤无 `polyline` 字段，几何数据在 `tmcs[].tmc_polyline`；解析器自动拼接，空折线时不再误触发偏航重规划，且兜底发布路线总量避免 UI 全空。
+- ETA 改用与顶部时钟一致的 UTC+8 计算（板上系统时区为 UTC），并加"预计到达"文字标注。
+- v5 分段距离字段为 `step_distance`（v3 为 `distance`），两者兼容。
+- 首步常无 `road_name`，回退取后续步骤路名。
+- `main.cpp` 读取含逗号的 ini 值改用 `iniScalar()`（QSettings 会把逗号值拆成列表导致取空）。
+
 ## [0.2.10-ui] - 2026-09-12
 
 ### 新增
