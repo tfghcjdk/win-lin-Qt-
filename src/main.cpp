@@ -46,7 +46,12 @@ int main(int argc, char *argv[]) {
         model->routeDurationSeconds = route.totalDurationSeconds;
         if (!route.steps.isEmpty()) {
             model->routeNextInstruction = route.steps.first().instruction;
-            model->routeNextRoad = route.steps.first().roadName;
+            // First step often has no road name ("右转进入主路"); show the road
+            // being entered, i.e. the first step that actually names one.
+            QString road = route.steps.first().roadName;
+            for (int i = 1; road.isEmpty() && i < route.steps.size(); ++i)
+                road = route.steps.at(i).roadName;
+            model->routeNextRoad = road;
             model->routeNextStepMeters = route.steps.first().distanceMeters;
         }
         model->notify();

@@ -1,5 +1,6 @@
 #include "navigation_service.h"
 #include <QDateTime>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -172,6 +173,12 @@ void NavigationService::onReplyFinished() {
     }
 
     const QByteArray body = reply->readAll();
+#ifdef Q_OS_LINUX
+    // Keep the last raw response on the board for field-name inspection.
+    QFile dump(QStringLiteral("/Kd1234/config/navigation_last_response.json"));
+    if (dump.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        dump.write(body);
+#endif
     NavigationRoute parsed;
     QString parseError;
     if (!parseRouteResponse(body, &parsed, &parseError)) {
@@ -246,6 +253,9 @@ bool NavigationService::parseRouteResponse(const QByteArray &json, NavigationRou
         if (step.roadName.isEmpty())
             step.roadName = stepObject.value(QStringLiteral("road_name")).toString();
         step.distanceMeters = intFromVariant(stepObject.value(QStringLiteral("distance")));
+        if (step.distanceMeters <= 0)
+            // v5 names the per-step distance "step_distance" (v3 uses "distance").
+            step.distanceMeters = intFromVariant(stepObject.value(QStringLiteral("step_distance")));
         step.polyline = stepObject.value(QStringLiteral("polyline")).toString();
         result.steps.append(step);
     }

@@ -168,9 +168,9 @@ void NavigationCard::paintEvent(QPaintEvent *) {
     text(p,QRectF(52,52,176,15),m->routeActive?road:QStringLiteral("点击查看路线详情"),10,Muted);
     const QString summary=real?QStringLiteral("%1 公里 · %2 分钟").arg(QString::number(m->routeDistanceMeters/1000.0,'f',1)).arg(m->routeDurationSeconds/60):QStringLiteral("12 公里 · 28 分钟");
     QString eta=QStringLiteral("--:--");
-    if(real){const QDateTime arrive=QDateTime::currentDateTime().addSecs(m->routeDurationSeconds);eta=arrive.toString(QStringLiteral("HH:mm"));}
+    if(real){const QDateTime arrive=QDateTime::currentDateTimeUtc().addSecs(m->routeDurationSeconds+8*60*60);eta=arrive.toString(QStringLiteral("HH:mm"));}
     else if(m->routeActive)eta=QStringLiteral("15:04");
-    p.fillRect(QRectF(8,155,232,27),QColor("#071828"));text(p,QRectF(15,157,127,22),m->routeActive?summary:QStringLiteral("导航已结束"),11);text(p,QRectF(150,157,81,22),m->routeActive?eta:"--:--",10,Muted);p.restore();
+    p.fillRect(QRectF(8,155,232,27),QColor("#071828"));text(p,QRectF(15,157,103,22),m->routeActive?summary:QStringLiteral("导航已结束"),10);text(p,QRectF(118,157,117,22),m->routeActive?(real?QStringLiteral("预计到达 ")+eta:eta):"--:--",10,Muted,false,Qt::AlignRight|Qt::AlignVCenter);p.restore();
 }
 CameraCard::CameraCard(VehicleDataCenter *model,QWidget *parent):HmiCard(model,QSize(172,190),parent) {
     QPushButton *b=button("openCamera",QStringLiteral("点击进入  ›"),QRect(13,145,146,34));b->setProperty("quiet",true);connect(b,&QPushButton::clicked,this,&CameraCard::openRequested);
