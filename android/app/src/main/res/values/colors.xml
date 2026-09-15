@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#0A5BD6</color>
+
+    <!-- NEV 深色主题（与车机 HMI 一致） -->
+    <color name="nev_bg">#0B1E2D</color>
+    <color name="nev_card">#12293B</color>
+    <color name="nev_card_stroke">#1E3A4F</color>
+    <color name="nev_input_bg">#0D2334</color>
+    <color name="nev_input_stroke">#23415A</color>
+    <color name="nev_text">#EAF6FF</color>
+    <color name="nev_text_muted">#8FA3B8</color>
+    <color name="nev_accent">#29D9C2</color>
+    <color name="nev_accent_deep">#12A5E0</color>
+    <color name="nev_green">#4ADE80</color>
+    <color name="nev_red">#F87171</color>
+    <color name="nev_gray">#5B7186</color>
 </resources>

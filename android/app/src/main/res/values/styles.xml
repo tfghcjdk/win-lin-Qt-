@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.NEV" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@drawable/bg_root</item>
+        <item name="android:statusBarColor">@color/nev_bg</item>
+        <item name="android:navigationBarColor">@color/nev_bg</item>
+        <item name="android:colorAccent">@color/nev_accent</item>
+        <item name="android:textColorPrimary">@color/nev_text</item>
+        <item name="android:textColorHint">@color/nev_text_muted</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

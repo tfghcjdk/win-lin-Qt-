@@ -1,0 +1,4 @@
+com.nev.locator.test.app-androidTest-0 D:\QTXM\Qt164\Qt1604\android\app\build\generated\res\resValues\androidTest\debug
+com.nev.locator.test.app-mergeDebugAndroidTestResources-1 D:\QTXM\Qt164\Qt1604\android\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.nev.locator.test.app-mergeDebugAndroidTestResources-2 D:\QTXM\Qt164\Qt1604\android\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.nev.locator.test.app-merged_res-3 D:\QTXM\Qt164\Qt1604\android\app\build\intermediates\merged_res\debugAndroidTest

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,88 +10,234 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="NEV-Locator 车载定位推送"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="开发板 IP（连同一热点）" />
-        <EditText
-            android:id="@+id/editIp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:hint="10.118.153.187" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="高德 Web 服务 Key（用于地名解析）" />
-        <EditText
-            android:id="@+id/editKey"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:hint="与板端 navigation.ini 相同" />
-
+        <!-- 顶部标题区 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="16dp">
-            <Button
-                android:id="@+id/buttonStart"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="12dp"
+            android:paddingBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="开始推送定位" />
-            <Button
-                android:id="@+id/buttonStop"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:text="NEV-Locator"
+                android:textColor="@color/nev_text"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="停止" />
+                android:layout_marginTop="4dp"
+                android:text="车载定位推送 · 高德导航联动"
+                android:textColor="@color/nev_text_muted"
+                android:textSize="13sp" />
         </LinearLayout>
 
-        <View
+        <!-- 卡片一：连接设置 -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#CCCCCC"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="16dp"
+            android:layout_marginBottom="14dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="目的地（支持中文地名）" />
-        <EditText
-            android:id="@+id/editDestination"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text"
-            android:hint="例如：中关村广场 / 北京西站" />
-        <Button
-            android:id="@+id/buttonSendDestination"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="发送目的地到车机" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="连接设置"
+                android:textColor="@color/nev_accent"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/textStatus"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="开发板 IP（连同一热点）"
+                android:textColor="@color/nev_text_muted"
+                android:textSize="12sp" />
+            <EditText
+                android:id="@+id/editIp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/edit_bg"
+                android:padding="12dp"
+                android:inputType="text"
+                android:textColor="@color/nev_text"
+                android:textColorHint="@color/nev_text_muted"
+                android:hint="10.118.153.187"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="高德 Web 服务 Key（用于地名解析）"
+                android:textColor="@color/nev_text_muted"
+                android:textSize="12sp" />
+            <EditText
+                android:id="@+id/editKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/edit_bg"
+                android:padding="12dp"
+                android:inputType="text"
+                android:textColor="@color/nev_text"
+                android:textColorHint="@color/nev_text_muted"
+                android:hint="与板端 navigation.ini 相同"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- 卡片二：定位推送 -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="#F2F2F2"
-            android:padding="12dp"
-            android:text="未启动"
-            android:textSize="14sp" />
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="16dp"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="定位推送"
+                android:textColor="@color/nev_accent"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="每秒向车机发送 GPS 位置（UDP 45454）"
+                android:textColor="@color/nev_text_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="14dp">
+
+                <Button
+                    android:id="@+id/buttonStart"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/btn_primary"
+                    android:text="开始推送定位"
+                    android:textColor="#04202C"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    android:stateListAnimator="@null" />
+                <Button
+                    android:id="@+id/buttonStop"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/btn_secondary"
+                    android:text="停止"
+                    android:textColor="@color/nev_text"
+                    android:textSize="15sp"
+                    android:stateListAnimator="@null" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 卡片三：目的地 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="16dp"
+            android:layout_marginBottom="14dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="目的地"
+                android:textColor="@color/nev_accent"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="支持中文地名，发送后车机自动重算路线"
+                android:textColor="@color/nev_text_muted"
+                android:textSize="12sp" />
+
+            <EditText
+                android:id="@+id/editDestination"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/edit_bg"
+                android:padding="12dp"
+                android:inputType="text"
+                android:textColor="@color/nev_text"
+                android:textColorHint="@color/nev_text_muted"
+                android:hint="例如：中关村广场 / 北京西站"
+                android:textSize="15sp" />
+            <Button
+                android:id="@+id/buttonSendDestination"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/btn_primary"
+                android:text="发送目的地到车机"
+                android:textColor="#04202C"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:stateListAnimator="@null" />
+        </LinearLayout>
+
+        <!-- 卡片四：运行状态 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_status"
+            android:padding="16dp"
+            android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <View
+                    android:id="@+id/statusDot"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/status_dot" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="运行状态"
+                    android:textColor="@color/nev_text_muted"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+            <TextView
+                android:id="@+id/textStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="未启动"
+                android:textColor="@color/nev_text"
+                android:fontFamily="monospace"
+                android:textSize="14sp"
+                android:lineSpacingMultiplier="1.3" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

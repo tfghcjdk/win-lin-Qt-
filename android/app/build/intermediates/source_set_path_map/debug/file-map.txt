@@ -1,0 +1,7 @@
+com.nev.locator.app-pngs-0 D:\QTXM\Qt164\Qt1604\android\app\build\generated\res\pngs\debug
+com.nev.locator.app-resValues-1 D:\QTXM\Qt164\Qt1604\android\app\build\generated\res\resValues\debug
+com.nev.locator.app-packageDebugResources-2 D:\QTXM\Qt164\Qt1604\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.nev.locator.app-packageDebugResources-3 D:\QTXM\Qt164\Qt1604\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.nev.locator.app-merged_res-4 D:\QTXM\Qt164\Qt1604\android\app\build\intermediates\merged_res\debug
+com.nev.locator.app-debug-5 D:\QTXM\Qt164\Qt1604\android\app\src\debug\res
+com.nev.locator.app-main-6 D:\QTXM\Qt164\Qt1604\android\app\src\main\res

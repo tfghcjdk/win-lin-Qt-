@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -39,14 +40,25 @@ public class MainActivity extends Activity {
     private EditText keyEdit;
     private EditText destinationEdit;
     private TextView statusText;
+    private View statusDot;
     private Button startButton;
     private Button stopButton;
+
+    /** 状态指示灯：绿=收到定位，青=推送中，红=失败，灰=未启动/已停止 */
+    private void setStatusDot(int colorRes) {
+        if (statusDot == null) return;
+        GradientDrawable dot = (GradientDrawable) statusDot.getBackground().mutate();
+        dot.setColor(getResources().getColor(colorRes));
+    }
 
     private final BroadcastReceiver fixReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String text = intent.getStringExtra(LocationService.EXTRA_TEXT);
-            if (text != null) statusText.setText(text);
+            if (text != null) {
+                statusText.setText(text);
+                setStatusDot(R.color.nev_green);
+            }
         }
     };
 
@@ -59,6 +71,7 @@ public class MainActivity extends Activity {
         keyEdit = findViewById(R.id.editKey);
         destinationEdit = findViewById(R.id.editDestination);
         statusText = findViewById(R.id.textStatus);
+        statusDot = findViewById(R.id.statusDot);
         startButton = findViewById(R.id.buttonStart);
         stopButton = findViewById(R.id.buttonStop);
         Button sendDestinationButton = findViewById(R.id.buttonSendDestination);
@@ -79,6 +92,7 @@ public class MainActivity extends Activity {
                 intent.setAction(LocationService.ACTION_STOP);
                 startService(intent);
                 statusText.setText("已停止");
+                setStatusDot(R.color.nev_gray);
             }
         });
         sendDestinationButton.setOnClickListener(new View.OnClickListener() {
@@ -146,6 +160,7 @@ public class MainActivity extends Activity {
         }
         statusText.setText("推送中 -> " + ipEdit.getText().toString().trim()
                 + ":" + UdpSender.BOARD_PORT);
+        setStatusDot(R.color.nev_accent);
     }
 
     /** Geocodes the typed Chinese name (AMap -> GCJ-02) and sends it. */
@@ -213,6 +228,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override public void run() {
                 statusText.setText(message);
+                setStatusDot(R.color.nev_red);
                 toast(message);
             }
         });
