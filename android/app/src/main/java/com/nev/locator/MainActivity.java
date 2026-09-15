@@ -44,6 +44,9 @@ public class MainActivity extends Activity {
     private Button startButton;
     private Button stopButton;
 
+    /** 目的地操作后 4 秒内不被每秒的定位状态刷新覆盖 */
+    private long destStatusHoldUntilMs = 0;
+
     /** 状态指示灯：绿=收到定位，青=推送中，红=失败，灰=未启动/已停止 */
     private void setStatusDot(int colorRes) {
         if (statusDot == null) return;
@@ -54,6 +57,7 @@ public class MainActivity extends Activity {
     private final BroadcastReceiver fixReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (System.currentTimeMillis() < destStatusHoldUntilMs) return;
             String text = intent.getStringExtra(LocationService.EXTRA_TEXT);
             if (text != null) {
                 statusText.setText(text);
@@ -177,6 +181,7 @@ public class MainActivity extends Activity {
             return;
         }
         statusText.setText("地理编码中: " + name);
+        destStatusHoldUntilMs = System.currentTimeMillis() + 4000;
         new Thread(new Runnable() {
             @Override public void run() {
                 try {
@@ -215,6 +220,7 @@ public class MainActivity extends Activity {
                         @Override public void run() {
                             statusText.setText(String.format(
                                     "目的地已发送: %s\n%.6f, %.6f", formatted, lat, lng));
+                            destStatusHoldUntilMs = System.currentTimeMillis() + 4000;
                         }
                     });
                 } catch (Exception e) {
@@ -229,6 +235,7 @@ public class MainActivity extends Activity {
             @Override public void run() {
                 statusText.setText(message);
                 setStatusDot(R.color.nev_red);
+                destStatusHoldUntilMs = System.currentTimeMillis() + 4000;
                 toast(message);
             }
         });

@@ -65,7 +65,7 @@ private:
         Projection() : alongMeters(0), offRouteMeters(1e9), stepIndex(-1), stepEndMeters(0) {}
     };
 
-    void requestRouteNow(const QString &reason);
+    void requestRouteNow(const QString &reason, bool force = false);
     bool mayRequestNow() const;             // cooldown gate
     void rebuildPolyline();                 // merge step polylines
     Projection project(double lat, double lng) const;

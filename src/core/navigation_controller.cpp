@@ -40,7 +40,7 @@ void NavigationController::setDestination(const QString &gcjLngLat) {
         emit logLine(QStringLiteral("destination changed to %1, rerouting").arg(dest));
         clearRoute();
         if (m_haveFix)
-            requestRouteNow(QStringLiteral("destination-change"));
+            requestRouteNow(QStringLiteral("destination-change"), true);
     }
 }
 
@@ -68,12 +68,14 @@ bool NavigationController::mayRequestNow() const {
            >= qint64(m_rerouteCooldownSec) * 1000;
 }
 
-void NavigationController::requestRouteNow(const QString &reason) {
+void NavigationController::requestRouteNow(const QString &reason, bool force) {
     if (m_destination.isEmpty()) {
         emit logLine(QStringLiteral("reroute skipped (%1): no destination set").arg(reason));
         return;
     }
-    if (!mayRequestNow()) {
+    // User-initiated re-routes (destination change) bypass the cooldown;
+    // automatic triggers (off-route, first-fix) stay rate-limited.
+    if (!force && !mayRequestNow()) {
         emit logLine(QStringLiteral("reroute skipped (%1): cooldown").arg(reason));
         return;
     }
