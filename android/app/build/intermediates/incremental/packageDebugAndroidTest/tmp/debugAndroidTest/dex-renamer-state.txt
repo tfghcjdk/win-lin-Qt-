@@ -1,4 +1,0 @@
-#Mon Sep 14 20:38:33 CST 2026
-base.0=D\:\\QTXM\\Qt164\\Qt1604\\android\\app\\build\\intermediates\\dex\\debugAndroidTest\\mergeProjectDexDebugAndroidTest\\0\\classes.dex
-path.0=0/classes.dex
-renamed.0=classes.dex

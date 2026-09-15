@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="ic_launcher_background">#0A5BD6</color>
-    <string name="app_name">NEV-Locator</string>
-    <string name="channel_name">定位推送</string>
-</resources>
