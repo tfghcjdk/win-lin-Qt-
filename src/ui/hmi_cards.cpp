@@ -174,11 +174,32 @@ void NavigationCard::paintEvent(QPaintEvent *) {
             const double s=qMin(mapArea.width()/spanX,mapArea.height()/spanY);
             auto toPx=[&](const QPointF &g){return QPointF(mapArea.center().x()+(g.x()-(minX+maxX)/2)*s,
                                                             mapArea.center().y()-(g.y()-(minY+maxY)/2)*s);};
-            QPainterPath route;route.moveTo(toPx(geo.first()));for(int i=1;i<geo.size();++i)route.lineTo(toPx(geo.at(i)));
-            p.setPen(QPen(QColor("#075661"),8));p.drawPath(route);p.setPen(QPen(Green,3));p.drawPath(route);
-            const QPointF end=toPx(geo.last());p.setPen(QPen(Text,1));p.setBrush(QColor("#f45363"));p.drawEllipse(end,4,4);
+            // Nearest polyline point to the vehicle -> split traveled/remaining.
+            int nearest=0;
+            if(m->hasPositionFix){
+                double best=1e18;
+                for(int i=0;i<geo.size();++i){const double dx=geo.at(i).x()-m->vehicleLng,dy=geo.at(i).y()-m->vehicleLat;
+                    const double d2=dx*dx+dy*dy;if(d2<best){best=d2;nearest=i;}}
+            }
+            auto subPath=[&](int from,int to){QPainterPath path;path.moveTo(toPx(geo.at(from)));
+                for(int i=from+1;i<=to;++i)path.lineTo(toPx(geo.at(i)));return path;};
+            // Traveled part: dim gray-green, thinner.
+            if(nearest>0){QPainterPath done=subPath(0,nearest);
+                p.setPen(QPen(QColor("#33505f"),7,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));p.drawPath(done);}
+            // Remaining part: dark casing + bright core, rounded caps.
+            QPainterPath rest=subPath(nearest,geo.size()-1);
+            p.setPen(QPen(QColor("#075661"),9,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));p.drawPath(rest);
+            p.setPen(QPen(Green,3.5,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));p.drawPath(rest);
+            // Start marker: green dot with white ring.
+            const QPointF start=toPx(geo.first());
+            p.setPen(QPen(Qt::white,1.5));p.setBrush(QColor("#4ade80"));p.drawEllipse(start,4,4);
+            // End marker: red dot with white ring (destination flag).
+            const QPointF end=toPx(geo.last());
+            p.setPen(QPen(Qt::white,1.5));p.setBrush(QColor("#f45363"));p.drawEllipse(end,4.5,4.5);
+            // Vehicle: soft halo + white-ringed cyan dot.
             if(m->hasPositionFix){const QPointF pos=toPx(QPointF(m->vehicleLng,m->vehicleLat));
-                p.setPen(QPen(Qt::white,2));p.setBrush(Cyan);p.drawEllipse(pos,5,5);}
+                p.setPen(Qt::NoPen);p.setBrush(QColor(41,217,194,60));p.drawEllipse(pos,9,9);
+                p.setPen(QPen(Qt::white,2));p.setBrush(Cyan);p.drawEllipse(pos,4.5,4.5);}
         }
     }
     if(m->routePolyline.isEmpty()){QPolygonF arrow;arrow<<QPointF(124,125)<<QPointF(114,143)<<QPointF(124,139)<<QPointF(134,143);p.setPen(QPen(Text,1));p.setBrush(Cyan);p.drawPolygon(arrow);}
